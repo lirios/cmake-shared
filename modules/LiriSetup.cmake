@@ -1,0 +1,82 @@
+if(LIRI_LOCAL_ECM)
+    ## Add some paths to check for CMake modules:
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/modules")
+else()
+    ## Find ECM:
+    find_package(ECM "5.48.0" REQUIRED NO_MODULE)
+
+    ## Add some paths to check for CMake modules:
+    list(APPEND CMAKE_MODULE_PATH "${ECM_MODULE_PATH};${ECM_KDE_MODULE_DIR}")
+endif()
+
+## Force C++ standard, do not fall back, do not use compiler extensions:
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+## Position independent code:
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Do not relink dependent libraries when no header has changed:
+set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
+
+# Default to hidden visibility for symbols:
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
+## Define some constants to check for certain platforms, etc:
+include(LiriPlatformSupport)
+
+## Enable feature summary at the end of the configure run:
+include(FeatureSummary)
+
+## Enable uninstall target:
+include(ECMUninstallTarget)
+
+## Enable support for sanitizers:
+include(ECMEnableSanitizers)
+
+## Always include srcdir and builddir in include path:
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+## Instruct CMake to run moc automatically when needed:
+set(CMAKE_AUTOMOC ON)
+
+## Create code from a list of Qt designer ui files:
+set(CMAKE_AUTOUIC ON)
+
+## Enable Clazy warnings:
+if(CLANG)
+    option(ENABLE_CLAZY "Enable Clazy warnings" OFF)
+    add_feature_info("Clazy" ENABLE_CLAZY "Clazy warnings")
+
+    if(ENABLE_CLAZY)
+        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClangLazy${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clang-lazy")
+    endif()
+endif()
+
+## Enable coverage:
+if(GCC)
+    option(ENABLE_COVERAGE "Enable GCov code coverage support (gcc only)" OFF)
+    add_feature_info("Coverage" ENABLE_COVERAGE "Code coverage (gcc only)")
+
+    if(ENABLE_COVERAGE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+    endif()
+endif()
+
+## Add Liri functions:
+include(LiriBuild)
+
+## Enable testing:
+option(BUILD_TESTING "Build automated tests" ON)
+add_feature_info("Testing" BUILD_TESTING "Automated tests")
+if(BUILD_TESTING)
+    include(CTest)
+    enable_testing()
+endif()
+
+## Print a feature summary:
+feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
