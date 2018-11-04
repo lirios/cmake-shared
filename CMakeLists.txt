@@ -43,3 +43,5 @@ install(
 
 file(GLOB modules_FILES "${CMAKE_SOURCE_DIR}/modules/*[^~]")
 install(FILES ${modules_FILES} DESTINATION "${MODULES_INSTALL_DIR}")
+
+include(modules/LiriCPack.cmake)
