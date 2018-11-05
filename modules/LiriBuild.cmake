@@ -688,14 +688,8 @@ function(liri_add_qml_plugin name)
     )
 
     # Install
-    install(
-        FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/qmldir"
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins.qmltypes"
-            ${_arg_QML_FILES}
-        DESTINATION
-            "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}"
-    )
+    install(FILES ${_arg_QML_FILES}
+            DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
     install(TARGETS "${target}" DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
 endfunction()
 
@@ -715,12 +709,6 @@ function(liri_add_qml_module name)
     add_custom_target("${target}" SOURCES ${_arg_QML_FILES})
 
     # Install
-    install(
-        FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/qmldir"
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins.qmltypes"
-            ${_arg_QML_FILES}
-        DESTINATION
-            "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}"
-    )
+    install(FILES ${_arg_QML_FILES}
+            DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
 endfunction()
