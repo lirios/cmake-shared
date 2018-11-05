@@ -707,3 +707,125 @@ function(liri_add_qml_module name)
     install(FILES ${_arg_QML_FILES}
             DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
 endfunction()
+
+
+function(liri_add_indicator name)
+    # Parse arguments
+    _liri_parse_all_arguments(
+        _arg "liri_add_indicator"
+        ""
+        "METADATA;TRANSLATIONS_PATH"
+        "QML_FILES"
+        ${ARGN}
+        )
+
+    # Find packages we need
+    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core LinguistTools)
+
+    string(TOLOWER "${name}" name_lower)
+
+    # Assume a default value if metadata is not specified
+    if(NOT _arg_METADATA)
+        set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop.in")
+    endif()
+
+    # Translation directory
+    if(DEFINED _arg_TRANSLATIONS_PATH)
+        set(_translations_path "translations")
+    else()
+        set(_translations_path "${_arg_TRANSLATIONS_PATH}")
+    endif()
+    get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
+
+    # Translate desktop file
+    liri_translate_desktop(_desktop_files
+        SOURCES "${_arg_METADATA}"
+        TRANSLATIONS_PATH "${_translations_path}"
+    )
+
+    # Sources
+    set(_sources ${_arg_QML_FILES} ${_desktop_files})
+
+    # Translations
+    file(GLOB _translations "${_translations_path}/*.ts")
+    qt5_add_translation(_qm_FILES ${_translations})
+
+    # Target
+    set(target "${name}Indicator")
+    add_custom_target("${target}" ALL SOURCES ${_sources})
+
+    # Install
+    install(
+        FILES ${_desktop_files}
+        DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}"
+    )
+    install(
+        FILES ${_arg_QML_FILES}
+        DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}/contents"
+    )
+    install(
+        FILES ${_qm_FILES}
+        DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}/translations"
+    )
+endfunction()
+
+
+function(liri_add_settings_module name)
+    # Parse arguments
+    _liri_parse_all_arguments(
+        _arg "liri_add_settings_module"
+        ""
+        "METADATA;TRANSLATIONS_PATH"
+        "CONTENTS"
+        ${ARGN}
+        )
+
+    # Find packages we need
+    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core LinguistTools)
+
+    string(TOLOWER "${name}" name_lower)
+
+    # Assume a default value if metadata is not specified
+    if(NOT _arg_METADATA)
+        set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop.in")
+    endif()
+
+    # Translation directory
+    if(DEFINED _arg_TRANSLATIONS_PATH)
+        set(_translations_path "translations")
+    else()
+        set(_translations_path "${_arg_TRANSLATIONS_PATH}")
+    endif()
+    get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
+
+    # Translate desktop file
+    liri_translate_desktop(_desktop_files
+        SOURCES "${_arg_METADATA}"
+        TRANSLATIONS_PATH "${_translations_path}"
+    )
+
+    # Sources
+    set(_sources ${_arg_CONTENTS} ${_desktop_files})
+
+    # Translations
+    file(GLOB _translations "${_translations_path}/*.ts")
+    qt5_add_translation(_qm_FILES ${_translations})
+
+    # Target
+    set(target "${name}Settings")
+    add_custom_target("${target}" ALL SOURCES ${_sources})
+
+    # Install
+    install(
+        FILES ${_desktop_files}
+        DESTINATION "${INSTALL_DATADIR}/liri-settings/modules/${name_lower}"
+    )
+    install(
+        FILES ${_arg_CONTENTS}
+        DESTINATION "${INSTALL_DATADIR}/liri-settings/modules/${name_lower}/contents"
+    )
+    install(
+        FILES ${_qm_FILES}
+        DESTINATION "${INSTALL_DATADIR}/liri-settings/translations/modules"
+    )
+endfunction()
