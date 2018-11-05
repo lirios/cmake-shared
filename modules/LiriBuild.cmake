@@ -147,7 +147,7 @@ function(_qdbusxml2cpp_command target infile)
 endfunction()
 
 
-set(__default_private_args "SOURCES;LIBRARIES;INCLUDE_DIRECTORIES;DEFINES;RESOURCES;TRANSLATIONS;DBUS_ADAPTOR_FLAGS;DBUS_ADAPTOR_SOURCES;DBUS_INTERFACE_FLAGS;DBUS_INTERFACE_SOURCES")
+set(__default_private_args "SOURCES;LIBRARIES;INCLUDE_DIRECTORIES;DEFINES;RESOURCES;DBUS_ADAPTOR_FLAGS;DBUS_ADAPTOR_SOURCES;DBUS_INTERFACE_FLAGS;DBUS_INTERFACE_SOURCES")
 set(__default_public_args "PUBLIC_LIBRARIES;PUBLIC_INCLUDE_DIRECTORIES;PUBLIC_DEFINES")
 
 
@@ -453,7 +453,7 @@ endfunction()
 # by liri_add_test or add_qt_tool below.
 function(liri_add_executable name)
     # Find packages we need
-    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core LinguistTools)
+    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
 
     # Parse arguments
     _liri_parse_all_arguments(
@@ -476,10 +476,6 @@ function(liri_add_executable name)
     if(DEFINED _arg_RESOURCES)
         qt5_add_resources(RESOURCES ${_arg_RESOURCES})
         list(APPEND _arg_SOURCES ${RESOURCES})
-    endif()
-    if(DEFINED _arg_TRANSLATIONS)
-        qt5_add_translation(TRANSLATIONS ${_arg_TRANSLATIONS})
-        list(APPEND _arg_SOURCES ${TRANSLATIONS})
     endif()
     if(DEFINED _arg_APPDATA)
         list(APPEND _arg_SOURCES ${_arg_APPDATA})
@@ -590,10 +586,6 @@ function(liri_add_plugin name)
         qt5_add_resources(RESOURCES ${_arg_RESOURCES})
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
-    if(DEFINED _arg_TRANSLATIONS)
-        qt5_add_translation(TRANSLATIONS ${_arg_TRANSLATIONS})
-        list(APPEND _arg_SOURCES ${TRANSLATIONS})
-    endif()
     set_target_properties("${target}" PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_PLUGINSDIR}/${_arg_TYPE}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_BINDIR}"
@@ -658,10 +650,6 @@ function(liri_add_qml_plugin name)
     if(DEFINED _arg_RESOURCES)
         qt5_add_resources(RESOURCES ${_arg_RESOURCES})
         list(APPEND _arg_SOURCES ${RESOURCES})
-    endif()
-    if(DEFINED _arg_TRANSLATIONS)
-        qt5_add_translation(TRANSLATIONS ${_arg_TRANSLATIONS})
-        list(APPEND _arg_SOURCES ${TRANSLATIONS})
     endif()
     extend_target("${target}"
         SOURCES
