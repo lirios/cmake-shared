@@ -459,7 +459,7 @@ function(liri_add_executable name)
     _liri_parse_all_arguments(
         _arg "liri_add_executable"
         "GUI;NO_TARGET_INSTALLATION"
-        "OUTPUT_NAME;OUTPUT_DIRECTORY"
+        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY"
         "EXE_FLAGS;${__default_private_args};APPDATA;DESKTOP"
         ${ARGN}
     )
@@ -504,7 +504,11 @@ function(liri_add_executable name)
 
     # Install executable
     if(NOT "${_arg_NO_TARGET_INSTALLATION}")
-        install(TARGETS "${name}" DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
+        if(DEFINED _arg_INSTALL_DIRECTORY)
+            install(TARGETS "${name}" DESTINATION "${_arg_INSTALL_DIRECTORY}")
+        else()
+            install(TARGETS "${name}" DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
+        endif()
     endif()
 
     # Install AppStream metadata
