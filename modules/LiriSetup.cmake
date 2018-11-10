@@ -1,6 +1,10 @@
 if(LIRI_LOCAL_ECM)
     ## Add some paths to check for CMake modules:
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/modules")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/find-modules")
+
+    set(ECM_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/modules/")
+    set(ECM_FIND_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/find-modules/")
 else()
     ## Find ECM:
     find_package(ECM "5.48.0" REQUIRED NO_MODULE)
