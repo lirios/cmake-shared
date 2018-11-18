@@ -13,10 +13,10 @@ else()
     list(APPEND CMAKE_MODULE_PATH "${ECM_MODULE_PATH};${ECM_KDE_MODULE_DIR}")
 endif()
 
-## Force C++ standard, do not fall back, do not use compiler extensions:
+## Force C++ standard, do not fall back, use compiler extensions:
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 ## Position independent code:
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
