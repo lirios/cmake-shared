@@ -26,6 +26,15 @@
 #
 
 function(liri_install_doc qdoc_filename)
+    # Parse arguments
+    _liri_parse_all_arguments(
+        _arg "liri_install_doc"
+        ""
+        "OUTPUT_DIRECTORY_VARIABLE"
+        ""
+        ${ARGN}
+    )
+
     find_package(Qt5Core QUIET)
     if(TARGET Qt5::qmake)
         # Find QT_INSTALL_DOCS AND QT_HOST_DATA
@@ -58,6 +67,9 @@ function(liri_install_doc qdoc_filename)
             COMMAND
                 QT_INSTALL_DOCS=${QT_INSTALL_DOCS} QT_VERSION_TAG="${Qt5Core_VERSION_MAJOR}.${Qt5Core_VERSION_MINOR}" FLUID_VERSION="${PROJECT_VERSION}" FLUID_VERSION_TAG="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}" FLUID_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}" "${QDoc_EXECUTABLE}" --outputdir "${CMAKE_CURRENT_BINARY_DIR}/qdoc_html" "${qdoc_filename}"
         )
+        if(_arg_OUTPUT_DIRECTORY_VARIABLE)
+            set(${_arg_OUTPUT_DIRECTORY_VARIABLE} "${CMAKE_CURRENT_BINARY_DIR}/qdoc_html" PARENT_SCOPE)
+        endif()
     else()
         message(FATAL_ERROR "Could not find qdoc")
     endif()
