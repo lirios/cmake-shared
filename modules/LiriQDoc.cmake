@@ -31,7 +31,7 @@ function(liri_install_doc qdoc_filename)
         _arg "liri_install_doc"
         ""
         "OUTPUT_DIRECTORY_VARIABLE"
-        ""
+        "ENVIRONMENT"
         ${ARGN}
     )
 
@@ -65,7 +65,7 @@ function(liri_install_doc qdoc_filename)
         add_custom_target(docs
             ALL
             COMMAND
-                QT_INSTALL_DOCS=${QT_INSTALL_DOCS} QT_VERSION_TAG="${Qt5Core_VERSION_MAJOR}.${Qt5Core_VERSION_MINOR}" FLUID_VERSION="${PROJECT_VERSION}" FLUID_VERSION_TAG="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}" FLUID_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}" "${QDoc_EXECUTABLE}" --outputdir "${CMAKE_CURRENT_BINARY_DIR}/qdoc_html" "${qdoc_filename}"
+                QT_INSTALL_DOCS=${QT_INSTALL_DOCS} QT_VERSION_TAG="${Qt5Core_VERSION_MAJOR}.${Qt5Core_VERSION_MINOR}" ${_arg_ENVIRONMENT} "${QDoc_EXECUTABLE}" --outputdir "${CMAKE_CURRENT_BINARY_DIR}/qdoc_html" "${qdoc_filename}"
         )
         if(_arg_OUTPUT_DIRECTORY_VARIABLE)
             set(${_arg_OUTPUT_DIRECTORY_VARIABLE} "${CMAKE_CURRENT_BINARY_DIR}/qdoc_html" PARENT_SCOPE)
