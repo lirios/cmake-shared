@@ -310,6 +310,12 @@ function(liri_add_module name)
         DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
     )
 
+    set_target_properties("${target}"
+        PROPERTIES
+            VERSION "${PROJECT_VERSION}"
+            SOVERSION "${_module_version}"
+    )
+
     # Setup the private target
     target_include_directories("${target_private}" INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
