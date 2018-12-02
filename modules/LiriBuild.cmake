@@ -758,7 +758,7 @@ function(liri_add_indicator name)
     set(_sources ${_arg_QML_FILES} ${_desktop_files})
 
     # Translations
-    file(GLOB _translations "${_translations_path}/*.ts")
+    file(GLOB _translations "${_translations_path}/*_*.ts")
     qt5_add_translation(_qm_FILES ${_translations})
 
     # Target
@@ -816,7 +816,7 @@ function(liri_add_settings_module name)
     )
 
     # Translations
-    file(GLOB _translations "${_translations_path}/*.ts")
+    file(GLOB _translations "${_translations_path}/*_*.ts")
     qt5_add_translation(_qm_FILES ${_translations})
 
     # Sources
