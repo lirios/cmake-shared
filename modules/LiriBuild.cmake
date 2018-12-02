@@ -465,7 +465,7 @@ function(liri_add_executable name)
     _liri_parse_all_arguments(
         _arg "liri_add_executable"
         "GUI;NO_TARGET_INSTALLATION"
-        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY"
+        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY"
         "EXE_FLAGS;${__default_private_args};APPDATA;DESKTOP"
         ${ARGN}
     )
@@ -528,8 +528,13 @@ function(liri_add_executable name)
     # Install desktop entry
     if(DEFINED _arg_DESKTOP)
         if((LINUX OR DARWIN OR FREEBSD) AND NOT APPLE)
-            install(FILES ${_arg_DESKTOP}
-                    DESTINATION "${INSTALL_APPLICATIONSDIR}")
+            if(DEFINED _arg_DESKTOP_INSTALL_DIRECTORY)
+                install(FILES ${_arg_DESKTOP}
+                        DESTINATION "${_arg_DESKTOP_INSTALL_DIRECTORY}")
+            else()
+                install(FILES ${_arg_DESKTOP}
+                        DESTINATION "${INSTALL_APPLICATIONSDIR}")
+            endif()
         endif()
     endif()
 endfunction()
