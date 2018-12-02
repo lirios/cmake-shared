@@ -798,9 +798,9 @@ function(liri_add_settings_module name)
 
     # Translation directory
     if(DEFINED _arg_TRANSLATIONS_PATH)
-        set(_translations_path "translations")
-    else()
         set(_translations_path "${_arg_TRANSLATIONS_PATH}")
+    else()
+        set(_translations_path "${CMAKE_CURRENT_SOURCE_DIR}/translations")
     endif()
     get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
 
@@ -810,12 +810,12 @@ function(liri_add_settings_module name)
         TRANSLATIONS_PATH "${_translations_path}"
     )
 
-    # Sources
-    set(_sources ${_arg_CONTENTS} ${_desktop_files})
-
     # Translations
     file(GLOB _translations "${_translations_path}/*.ts")
     qt5_add_translation(_qm_FILES ${_translations})
+
+    # Sources
+    set(_sources ${_arg_CONTENTS} ${_desktop_files} ${_qm_FILES})
 
     # Target
     set(target "${name}Settings")
