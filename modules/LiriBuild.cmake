@@ -511,9 +511,13 @@ function(liri_add_executable name)
     # Install executable
     if(NOT "${_arg_NO_TARGET_INSTALLATION}")
         if(DEFINED _arg_INSTALL_DIRECTORY)
-            install(TARGETS "${name}" DESTINATION "${_arg_INSTALL_DIRECTORY}")
+            install(TARGETS "${name}"
+                    BUNDLE DESTINATION "/Applications/${_arg_OUTPUT_NAME}"
+                    DESTINATION "${_arg_INSTALL_DIRECTORY}")
         else()
-            install(TARGETS "${name}" DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
+            install(TARGETS "${name}"
+                    BUNDLE DESTINATION "/Applications/${_arg_OUTPUT_NAME}"
+                    DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
         endif()
     endif()
 
