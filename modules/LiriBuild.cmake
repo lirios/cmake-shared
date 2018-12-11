@@ -513,11 +513,11 @@ function(liri_add_executable name)
         if(DEFINED _arg_INSTALL_DIRECTORY)
             install(TARGETS "${name}"
                     BUNDLE DESTINATION "/Applications/${_arg_OUTPUT_NAME}"
-                    DESTINATION "${_arg_INSTALL_DIRECTORY}")
+                    RUNTIME DESTINATION "${_arg_INSTALL_DIRECTORY}")
         else()
             install(TARGETS "${name}"
                     BUNDLE DESTINATION "/Applications/${_arg_OUTPUT_NAME}"
-                    DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
+                    RUNTIME DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
         endif()
     endif()
 
