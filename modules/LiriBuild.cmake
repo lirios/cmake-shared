@@ -837,7 +837,7 @@ function(liri_add_settings_module name)
     )
     install(
         FILES ${_arg_CONTENTS}
-        DESTINATION "${INSTALL_DATADIR}/liri-settings/modules/${name_lower}/contents"
+        DESTINATION "${INSTALL_DATADIR}/liri-settings/modules/${name_lower}"
     )
     install(
         FILES ${_qm_FILES}
