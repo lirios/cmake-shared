@@ -261,6 +261,12 @@ function(liri_add_module name)
     endif()
     add_library("Liri::${target}" ALIAS "${target}")
 
+    # add resources
+    if(DEFINED _arg_RESOURCES)
+        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        list(APPEND _arg_SOURCES ${RESOURCES})
+    endif()
+
     # Add target for the private API
     set(target_private "${target}Private")
     add_library("${target_private}" INTERFACE)
