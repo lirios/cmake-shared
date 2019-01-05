@@ -72,7 +72,6 @@ if(GCC)
 endif()
 
 ## Add Liri functions:
-include(LiriTranslations)
 include(LiriBuild)
 
 ## Enable testing:

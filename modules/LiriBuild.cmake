@@ -747,7 +747,7 @@ function(liri_add_indicator name)
 
     # Assume a default value if metadata is not specified
     if(NOT _arg_METADATA)
-        set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop.in")
+        set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop")
     endif()
 
     # Translation directory
@@ -758,14 +758,8 @@ function(liri_add_indicator name)
     endif()
     get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
 
-    # Translate desktop file
-    liri_translate_desktop(_desktop_files
-        SOURCES "${_arg_METADATA}"
-        TRANSLATIONS_PATH "${_translations_path}"
-    )
-
     # Sources
-    set(_sources ${_arg_QML_FILES} ${_desktop_files})
+    set(_sources ${_arg_QML_FILES} ${_arg_METADATA})
 
     # Translations
     file(GLOB _translations "${_translations_path}/*_*.ts")
@@ -777,7 +771,7 @@ function(liri_add_indicator name)
 
     # Install
     install(
-        FILES ${_desktop_files}
+        FILES ${_arg_METADATA}
         DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}"
     )
     install(
@@ -808,7 +802,7 @@ function(liri_add_settings_module name)
 
     # Assume a default value if metadata is not specified
     if(NOT _arg_METADATA)
-        set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop.in")
+        set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop")
     endif()
 
     # Translation directory
@@ -819,18 +813,12 @@ function(liri_add_settings_module name)
     endif()
     get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
 
-    # Translate desktop file
-    liri_translate_desktop(_desktop_files
-        SOURCES "${_arg_METADATA}"
-        TRANSLATIONS_PATH "${_translations_path}"
-    )
-
     # Translations
     file(GLOB _translations "${_translations_path}/*_*.ts")
     qt5_add_translation(_qm_FILES ${_translations})
 
     # Sources
-    set(_sources ${_arg_CONTENTS} ${_desktop_files} ${_qm_FILES})
+    set(_sources ${_arg_CONTENTS} ${_arg_METADATA} ${_qm_FILES})
 
     # Target
     set(target "${name}Settings")
@@ -838,7 +826,7 @@ function(liri_add_settings_module name)
 
     # Install
     install(
-        FILES ${_desktop_files}
+        FILES ${_arg_METADATA}
         DESTINATION "${INSTALL_DATADIR}/liri-settings/modules/${name_lower}"
     )
     install(
