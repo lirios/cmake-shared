@@ -17,5 +17,11 @@ travis_start "build"
 msg "Build..."
 make -j $(nproc)
 make install
-make package
 travis_end "build"
+
+# Package
+travis_start "package"
+msg "Package..."
+mkdir -p artifacts
+tar czf artifacts/cmakeshared-artifacts.tar.gz -T install_manifest.txt
+travis_end "package"
