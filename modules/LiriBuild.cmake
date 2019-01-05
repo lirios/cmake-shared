@@ -700,7 +700,9 @@ function(liri_add_qml_plugin name)
     add_dependencies(qmltypes "${qmltypes_target}")
 
     # Append plugins.qmltypes
-    list(APPEND _arg_QML_FILES "${plugins_qmltypes}")
+    if(EXISTS "${plugins_qmltypes}")
+        list(APPEND _arg_QML_FILES "${plugins_qmltypes}")
+    endif()
 
     # Target
     add_library("${target}" SHARED)
@@ -790,7 +792,9 @@ function(liri_add_qml_module name)
     add_dependencies(qmltypes "${qmltypes_target}")
 
     # Append plugins.qmltypes
-    list(APPEND _arg_QML_FILES "${plugins_qmltypes}")
+    if(EXISTS "${plugins_qmltypes}")
+        list(APPEND _arg_QML_FILES "${plugins_qmltypes}")
+    endif()
 
     # Install
     install(FILES ${_arg_QML_FILES}
