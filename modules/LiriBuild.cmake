@@ -666,7 +666,7 @@ function(liri_add_qml_plugin name)
         message(FATAL_ERROR "Missing argument MODULE_PATH.")
     endif()
 
-    if(NOT DEFINED VERSION)
+    if(NOT DEFINED _arg_VERSION)
         set(_arg_VERSION "1.0")
     endif()
 
@@ -758,7 +758,7 @@ function(liri_add_qml_module name)
         message(FATAL_ERROR "Missing argument MODULE_PATH.")
     endif()
 
-    if(NOT DEFINED VERSION)
+    if(NOT DEFINED _arg_VERSION)
         set(_arg_VERSION "1.0")
     endif()
 
