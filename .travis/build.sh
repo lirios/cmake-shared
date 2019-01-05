@@ -16,8 +16,13 @@ travis_end "configure"
 travis_start "build"
 msg "Build..."
 make -j $(nproc)
-make install
 travis_end "build"
+
+# Install
+travis_start "install"
+msg "Install..."
+make install
+travis_end "install"
 
 # Package
 travis_start "package"
