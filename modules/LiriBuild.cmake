@@ -657,7 +657,7 @@ function(liri_add_qml_plugin name)
     _liri_parse_all_arguments(
         _arg "liri_add_qml_plugin"
         ""
-        "MODULE_PATH"
+        "MODULE_PATH;VERSION"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
     )
@@ -666,9 +666,41 @@ function(liri_add_qml_plugin name)
         message(FATAL_ERROR "Missing argument MODULE_PATH.")
     endif()
 
+    if(NOT DEFINED VERSION)
+        set(_arg_VERSION "1.0")
+    endif()
+
     set(target "${name}plugin")
     string(TOUPPER "${name}" name_upper)
     string(REGEX REPLACE "-" "_" name_upper "${name_upper}")
+
+    # Find qmlplugindump
+    get_target_property(QMake_EXECUTABLE Qt5::qmake LOCATION)
+    get_filename_component(_qmake_path ${QMake_EXECUTABLE} DIRECTORY)
+    find_program(QmlPluginDump_EXECUTABLE
+        NAMES
+            qmlplugindump-qt5
+            qmlplugindump
+        PATHS
+            "${_qmake_path}"
+        NO_DEFAULT_PATH
+    )
+
+    # plugins.qmltypes target
+    if(NOT TARGET qmltypes)
+        add_custom_target(qmltypes)
+    endif()
+    set(qmltypes_target "${target}-qmltypes")
+    set(plugins_qmltypes "${CMAKE_CURRENT_SOURCE_DIR}/plugins.qmltypes")
+    string(REPLACE "/" "." _module_name "${_arg_MODULE_PATH}")
+    add_custom_target("${qmltypes_target}"
+        BYPRODUCTS "${plugins_qmltypes}"
+        COMMAND ${QmlPluginDump_EXECUTABLE} -noinstantiate -nonrelocatable ${_module_name} ${_arg_VERSION} "${CMAKE_INSTALL_PREFIX}/${INSTALL_QMLDIR}" > "${plugins_qmltypes}"
+    )
+    add_dependencies(qmltypes "${qmltypes_target}")
+
+    # Append plugins.qmltypes
+    list(APPEND _arg_QML_FILES "${plugins_qmltypes}")
 
     # Target
     add_library("${target}" SHARED)
@@ -715,14 +747,50 @@ function(liri_add_qml_module name)
     _liri_parse_all_arguments(
         _arg "liri_add_qml_module"
         ""
-        "MODULE_PATH"
+        "MODULE_PATH;VERSION"
         "QML_FILES"
         ${ARGN}
     )
 
+    if(NOT DEFINED _arg_MODULE_PATH)
+        message(FATAL_ERROR "Missing argument MODULE_PATH.")
+    endif()
+
+    if(NOT DEFINED VERSION)
+        set(_arg_VERSION "1.0")
+    endif()
+
     # Target
     set(target "${name}plugin")
     add_custom_target("${target}" SOURCES ${_arg_QML_FILES})
+
+    # Find qmlplugindump
+    get_target_property(QMake_EXECUTABLE Qt5::qmake LOCATION)
+    get_filename_component(_qmake_path ${QMake_EXECUTABLE} DIRECTORY)
+    find_program(QmlPluginDump_EXECUTABLE
+        NAMES
+            qmlplugindump-qt5
+            qmlplugindump
+        PATHS
+            "${_qmake_path}"
+        NO_DEFAULT_PATH
+    )
+
+    # plugins.qmltypes target
+    if(NOT TARGET qmltypes)
+        add_custom_target(qmltypes)
+    endif()
+    set(qmltypes_target "${target}-qmltypes")
+    set(plugins_qmltypes "${CMAKE_CURRENT_SOURCE_DIR}/plugins.qmltypes")
+    string(REPLACE "/" "." _module_name "${_arg_MODULE_PATH}")
+    add_custom_target("${qmltypes_target}"
+        BYPRODUCTS "${plugins_qmltypes}"
+        COMMAND ${QmlPluginDump_EXECUTABLE} -noinstantiate -nonrelocatable ${_module_name} ${_arg_VERSION} "${CMAKE_INSTALL_PREFIX}/${INSTALL_QMLDIR}" > "${plugins_qmltypes}"
+    )
+    add_dependencies(qmltypes "${qmltypes_target}")
+
+    # Append plugins.qmltypes
+    list(APPEND _arg_QML_FILES "${plugins_qmltypes}")
 
     # Install
     install(FILES ${_arg_QML_FILES}
