@@ -14,7 +14,7 @@ else()
 endif()
 
 ## Force C++ standard, do not fall back, use compiler extensions:
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
