@@ -116,5 +116,8 @@ function(liri_add_qml_plugin name)
     # Install
     install(FILES ${_arg_QML_FILES}
             DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
+    if(MINGW)
+        set_target_properties(${target} PROPERTIES PREFIX "" IMPORT_PREFIX "")
+    endif()
     install(TARGETS "${target}" DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
 endfunction()
