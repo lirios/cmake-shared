@@ -5,7 +5,6 @@ CMake Shared
 [![GitHub release](https://img.shields.io/github/release/lirios/cmake-shared.svg)](https://github.com/lirios/cmake-shared)
 [![Build Status](https://travis-ci.org/lirios/cmake-shared.svg?branch=develop)](https://travis-ci.org/lirios/cmake-shared)
 [![GitHub issues](https://img.shields.io/github/issues/lirios/cmake-shared.svg)](https://github.com/lirios/cmake-shared/issues)
-[![Maintained](https://img.shields.io/maintenance/yes/2018.svg)](https://github.com/lirios/cmake-shared/commits/develop)
 
 Shared functions and macros for projects using the CMake build system.
 
