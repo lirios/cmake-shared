@@ -33,6 +33,9 @@
 # Liri modules provide also a way to be used by other build systems,
 # in the form of a CMake package and pkg-config file.
 function(liri_add_module name)
+    # Find packages we need
+    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
+
     # Include other functions and macros
     include(CMakePackageConfigHelpers)
     include(ECMGenerateHeaders)
@@ -42,7 +45,7 @@ function(liri_add_module name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_module"
-        "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
+        "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC;QTQUICK_COMPILER"
         "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;FORWARDING_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
@@ -89,9 +92,18 @@ function(liri_add_module name)
     endif()
     add_library("Liri::${target}" ALIAS "${target}")
 
-    # add resources
+    # Add resources
     if(DEFINED _arg_RESOURCES)
-        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        if(DEFINED _arg_QTQUICK_COMPILER)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+            endif()
+        else()
+            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
 

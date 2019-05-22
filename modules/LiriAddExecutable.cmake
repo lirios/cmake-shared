@@ -33,7 +33,7 @@ function(liri_add_executable name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_executable"
-        "GUI;NO_TARGET_INSTALLATION"
+        "GUI;NO_TARGET_INSTALLATION;QTQUICK_COMPILER"
         "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY"
         "EXE_FLAGS;${__default_private_args};APPDATA;DESKTOP"
         ${ARGN}
@@ -49,7 +49,17 @@ function(liri_add_executable name)
 
     add_executable("${name}" ${_arg_EXE_FLAGS})
     if(DEFINED _arg_RESOURCES)
-        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        if(DEFINED _arg_QTQUICK_COMPILER)
+            find_package(Qt5QuickCompiler)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+            endif()
+        else()
+            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
     if(DEFINED _arg_APPDATA)

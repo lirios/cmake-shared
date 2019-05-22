@@ -32,7 +32,7 @@ function(liri_add_qml_plugin name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_qml_plugin"
-        ""
+        "QTQUICK_COMPILER"
         "MODULE_PATH;VERSION"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
@@ -83,7 +83,17 @@ function(liri_add_qml_plugin name)
     # Target
     add_library("${target}" SHARED)
     if(DEFINED _arg_RESOURCES)
-        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        if(DEFINED _arg_QTQUICK_COMPILER)
+            find_package(Qt5QuickCompiler)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+            endif()
+        else()
+            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
     extend_target("${target}"
