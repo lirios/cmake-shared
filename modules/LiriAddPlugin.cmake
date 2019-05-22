@@ -45,7 +45,7 @@ function(liri_add_plugin name)
     # Target
     add_library("${target}" SHARED)
     if(DEFINED _arg_RESOURCES)
-        if(DEFINED _arg_QTQUICK_COMPILER)
+        if(${_arg_QTQUICK_COMPILER})
             find_package(Qt5QuickCompiler)
             if(Qt5QuickCompiler_FOUND)
                 qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})

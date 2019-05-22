@@ -49,7 +49,7 @@ function(liri_add_executable name)
 
     add_executable("${name}" ${_arg_EXE_FLAGS})
     if(DEFINED _arg_RESOURCES)
-        if(DEFINED _arg_QTQUICK_COMPILER)
+        if(${_arg_QTQUICK_COMPILER})
             find_package(Qt5QuickCompiler)
             if(Qt5QuickCompiler_FOUND)
                 qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
