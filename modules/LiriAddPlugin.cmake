@@ -32,7 +32,7 @@ function(liri_add_plugin name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_plugin"
-        "QTQUICK_COMPILER"
+	"STATIC;QTQUICK_COMPILER"
         "TYPE"
         "${__default_private_args};${__default_public_args}"
         ${ARGN}
@@ -43,7 +43,11 @@ function(liri_add_plugin name)
     string(REGEX REPLACE "-" "_" name_upper "${name_upper}")
 
     # Target
-    add_library("${target}" SHARED)
+    if(_arg_STATIC)
+        add_library("${target}" STATIC)
+    else()
+        add_library("${target}" SHARED)
+    endif()
     if(DEFINED _arg_RESOURCES)
         if(${_arg_QTQUICK_COMPILER})
             find_package(Qt5QuickCompiler)
@@ -62,6 +66,12 @@ function(liri_add_plugin name)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_PLUGINSDIR}/${_arg_TYPE}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_BINDIR}"
     )
+
+    set(_static_defines "")
+    if (_arg_STATIC)
+        set(_static_defines "QT_STATICPLUGIN")
+    endif()
+
     extend_target("${target}"
         SOURCES ${_arg_SOURCES}
         PUBLIC_INCLUDE_DIRECTORIES
@@ -78,6 +88,8 @@ function(liri_add_plugin name)
             QT_USE_QSTRINGBUILDER
             QT_DEPRECATED_WARNINGS
             ${_arg_DEFINES}
+	    "${_static_defines}"
+	    QT_PLUGIN
         EXPORT_IMPORT_CONDITION
             LIRI_BUILD_${name_upper}_LIB
         PUBLIC_LIBRARIES ${_arg_PUBLIC_LIBRARIES}
@@ -89,8 +101,10 @@ function(liri_add_plugin name)
     )
 
     # Install
-    install(TARGETS "${target}"
-        LIBRARY DESTINATION "${INSTALL_PLUGINSDIR}/${_arg_TYPE}"
-        ARCHIVE DESTINATION "${INSTALL_LIBDIR}/${_arg_TYPE}"
-    )
+    if(NOT _arg_STATIC)
+        install(TARGETS "${target}"
+            LIBRARY DESTINATION "${INSTALL_PLUGINSDIR}/${_arg_TYPE}"
+            ARCHIVE DESTINATION "${INSTALL_LIBDIR}/${_arg_TYPE}"
+        )
+    endif()
 endfunction()
