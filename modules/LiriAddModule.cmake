@@ -175,7 +175,15 @@ function(liri_add_module name)
     )
 
     # Headers
-    if(NOT ${_arg_NO_MODULE_HEADERS})
+    if(_arg_NO_MODULE_HEADERS)
+        # At least reference source code directories, this is particularly
+        # indicated for those static modules that we don't want to
+        # install nor generate headers for
+        target_include_directories("${target}" INTERFACE
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+        )
+    else()
         if(DEFINED _arg_FORWARDING_HEADERS)
             # Public headers and forward headers
             ecm_generate_headers(
