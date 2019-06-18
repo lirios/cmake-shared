@@ -56,7 +56,7 @@ if(CLANG)
     add_feature_info("Clazy" ENABLE_CLAZY "Clazy warnings")
 
     if(ENABLE_CLAZY)
-        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClangLazy${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clang-lazy")
+        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClazyPlugin${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clazy")
     endif()
 endif()
 
