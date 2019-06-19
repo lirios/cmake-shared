@@ -61,15 +61,7 @@ if(CLANG)
 endif()
 
 ## Enable coverage:
-if(GCC)
-    option(LIRI_ENABLE_COVERAGE "Enable GCov code coverage support (gcc only)" OFF)
-    add_feature_info("Coverage" LIRI_ENABLE_COVERAGE "Code coverage (gcc only)")
-
-    if(LIRI_ENABLE_COVERAGE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
-    endif()
-endif()
+include(LiriCoverage)
 
 ## Add Liri functions:
 include(LiriBuild)

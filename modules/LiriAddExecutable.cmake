@@ -88,6 +88,48 @@ function(liri_add_executable name)
         MACOSX_BUNDLE "${_arg_GUI}"
     )
 
+    if(LIRI_ENABLE_COVERAGE)
+        if(CLANG)
+            add_custom_target(
+                "ccov-run-${name}"
+                 COMMAND LLVM_PROFILE_FILE=${name}.profraw $<TARGET_FILE:${name}>
+                 COMMAND echo "-object=$<TARGET_FILE:${name}>" >> ${CMAKE_COVERAGE_OUTPUT_DIRECTORY}/binaries.list
+                 COMMAND echo "${CMAKE_CURRENT_BINARY_DIR}/${name}.profraw " >> ${CMAKE_COVERAGE_OUTPUT_DIRECTORY}/profraw.list
+                 DEPENDS "ccov-preprocessing" "${name}")
+            add_custom_target(
+                "ccov-processing-${name}"
+                COMMAND llvm-profdata merge -sparse ${name}.profraw -o ${name}.profdata
+                DEPENDS "ccov-run-${name}")
+            add_custom_target(
+                "ccov-show-${name}"
+                COMMAND llvm-cov show $<TARGET_FILE:${name}> -instr-profile=${name}.profdata -show-line-counts-or-regions
+                DEPENDS "ccov-processing-${name}")
+            add_custom_target(
+                "ccov-report-${name}"
+                COMMAND llvm-cov report $<TARGET_FILE:${name}> -instr-profile=${name}.profdata
+                DEPENDS "ccov-processing-${name}")
+            add_custom_target(
+                "ccov-${name}"
+                COMMAND llvm-cov show $<TARGET_FILE:${name}> -instr-profile=${name}.profdata -show-line-counts-or-regions -output-dir=${CMAKE_COVERAGE_OUTPUT_DIRECTORY}/${name} -format="html"
+                DEPENDS "ccov-processing-${name}")
+        else()
+        endif()
+
+        if(NOT TARGET "ccov")
+            add_custom_target("ccov")
+        endif()
+        add_dependencies("ccov" "ccov-${name}")
+
+        if(CLANG)
+            if(NOT TARGET "ccov-report")
+                add_custom_target("ccov-report")
+            endif()
+            add_dependencies("ccov-report" "ccov-report-${name}")
+        endif()
+
+        add_dependencies("ccov-all-processing" "ccov-run-${name}")
+    endif()
+
     # Install executable
     if(NOT "${_arg_NO_TARGET_INSTALLATION}")
         if(DEFINED _arg_INSTALL_DIRECTORY)
