@@ -75,10 +75,8 @@ endif()
 include(LiriBuild)
 
 ## Enable testing:
-option(LIRI_BUILD_TESTING "Build automated tests" ON)
-add_feature_info("Testing" LIRI_BUILD_TESTING "Automated tests")
-if(LIRI_BUILD_TESTING)
-    include(CTest)
+include(CTest)
+if(BUILD_TESTING)
     enable_testing()
 endif()
 
