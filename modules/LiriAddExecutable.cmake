@@ -33,8 +33,8 @@ function(liri_add_executable name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_executable"
-        "GUI;NO_TARGET_INSTALLATION;QTQUICK_COMPILER"
-        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY"
+        "GUI;NO_TARGET_INSTALLATION"
+        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY;QTQUICK_COMPILER"
         "EXE_FLAGS;${__default_private_args};APPDATA;DESKTOP"
         ${ARGN}
     )

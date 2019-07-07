@@ -45,8 +45,8 @@ function(liri_add_module name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_module"
-        "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC;QTQUICK_COMPILER"
-        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME"
+        "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
+        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;FORWARDING_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
     )

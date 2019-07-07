@@ -32,8 +32,8 @@ function(liri_add_plugin name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_plugin"
-	"STATIC;QTQUICK_COMPILER"
-        "TYPE"
+	"STATIC"
+        "TYPE;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args}"
         ${ARGN}
     )

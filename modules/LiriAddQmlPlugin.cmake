@@ -32,8 +32,8 @@ function(liri_add_qml_plugin name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_qml_plugin"
-	"STATIC;QTQUICK_COMPILER"
-        "MODULE_PATH;VERSION"
+	"STATIC"
+        "MODULE_PATH;VERSION;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
     )
