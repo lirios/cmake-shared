@@ -76,8 +76,11 @@ function(liri_add_executable name)
             "${CMAKE_CURRENT_BINARY_DIR}"
             ${_arg_INCLUDE_DIRECTORIES}
         DEFINES
-            ${_arg_DEFINES}
+            QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
             QT_NO_JAVA_STYLE_ITERATORS
+            QT_USE_QSTRINGBUILDER
+            QT_DEPRECATED_WARNINGS
+            ${_arg_DEFINES}
         LIBRARIES ${_arg_LIBRARIES}
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
