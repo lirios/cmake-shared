@@ -75,7 +75,9 @@ function(liri_add_executable name)
             "${CMAKE_CURRENT_SOURCE_DIR}"
             "${CMAKE_CURRENT_BINARY_DIR}"
             ${_arg_INCLUDE_DIRECTORIES}
-        DEFINES ${_arg_DEFINES}
+        DEFINES
+            ${_arg_DEFINES}
+            QT_NO_JAVA_STYLE_ITERATORS
         LIBRARIES ${_arg_LIBRARIES}
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}

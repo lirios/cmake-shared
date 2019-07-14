@@ -86,6 +86,7 @@ function(liri_add_plugin name)
             LIRI_${name_upper}_LIB
         DEFINES
             QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
+            QT_NO_JAVA_STYLE_ITERATORS
             QT_USE_QSTRINGBUILDER
             QT_DEPRECATED_WARNINGS
             ${_arg_DEFINES}
