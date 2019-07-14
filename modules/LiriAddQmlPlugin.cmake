@@ -67,7 +67,7 @@ function(liri_add_qml_plugin name)
         add_custom_target(qmltypes)
     endif()
     set(qmltypes_target "${target}-qmltypes")
-    set(plugins_qmltypes "${CMAKE_CURRENT_SOURCE_DIR}/plugins.qmltypes")
+    set(plugins_qmltypes "${CMAKE_CURRENT_BINARY_DIR}/plugins.qmltypes")
     string(REPLACE "/" "." _module_name "${_arg_MODULE_PATH}")
     add_custom_target("${qmltypes_target}"
         BYPRODUCTS "${plugins_qmltypes}"
