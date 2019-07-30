@@ -224,7 +224,11 @@ function(liri_add_module name)
             foreach(_header_filename ${_arg_PRIVATE_HEADERS})
                 get_filename_component(_base_header_filename "${_header_filename}" NAME)
                 set(_fwd_header_filename "${include_dir}/${PROJECT_VERSION}/${module}/private/${_base_header_filename}")
-                file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}\"")
+                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}")
+                    file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}\"")
+                elseif(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${_header_filename}")
+                    file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_BINARY_DIR}/${_header_filename}\"")
+                endif()
             endforeach()
 
             # Install
