@@ -33,6 +33,9 @@
 # Liri modules provide also a way to be used by other build systems,
 # in the form of a CMake package and pkg-config file.
 function(liri_add_module name)
+    # Find packages we need
+    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
+
     # Include other functions and macros
     include(CMakePackageConfigHelpers)
     include(ECMGenerateHeaders)
@@ -43,7 +46,7 @@ function(liri_add_module name)
     _liri_parse_all_arguments(
         _arg "liri_add_module"
         "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
-        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME"
+        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;FORWARDING_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
     )
@@ -89,9 +92,20 @@ function(liri_add_module name)
     endif()
     add_library("Liri::${target}" ALIAS "${target}")
 
-    # add resources
+    # Add resources
     if(DEFINED _arg_RESOURCES)
-        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        if(${_arg_QTQUICK_COMPILER})
+            find_package(Qt5QuickCompiler)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
+                list(APPEND _arg_SOURCES ${_arg_RESOURCES})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+            endif()
+        else()
+            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
 
@@ -131,6 +145,7 @@ function(liri_add_module name)
             LIRI_${name_upper}_LIB
         DEFINES
             QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
+            QT_NO_JAVA_STYLE_ITERATORS
             QT_USE_QSTRINGBUILDER
             QT_DEPRECATED_WARNINGS
             ${_arg_DEFINES}
@@ -161,7 +176,15 @@ function(liri_add_module name)
     )
 
     # Headers
-    if(NOT ${_arg_NO_MODULE_HEADERS})
+    if(_arg_NO_MODULE_HEADERS)
+        # At least reference source code directories, this is particularly
+        # indicated for those static modules that we don't want to
+        # install nor generate headers for
+        target_include_directories("${target}" INTERFACE
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+        )
+    else()
         if(DEFINED _arg_FORWARDING_HEADERS)
             # Public headers and forward headers
             ecm_generate_headers(
@@ -201,7 +224,11 @@ function(liri_add_module name)
             foreach(_header_filename ${_arg_PRIVATE_HEADERS})
                 get_filename_component(_base_header_filename "${_header_filename}" NAME)
                 set(_fwd_header_filename "${include_dir}/${PROJECT_VERSION}/${module}/private/${_base_header_filename}")
-                file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}\"")
+                if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}")
+                    file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}\"")
+                elseif(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${_header_filename}")
+                    file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_BINARY_DIR}/${_header_filename}\"")
+                endif()
             endforeach()
 
             # Install

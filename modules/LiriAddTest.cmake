@@ -38,6 +38,23 @@ function(liri_add_test name)
         ${ARGN}
     )
 
+    # Absolute installation paths
+    if(IS_ABSOLUTE "${INSTALL_BINDIR}")
+        set(_bindir "${INSTALL_BINDIR}")
+    else()
+        set(_bindir "${CMAKE_INSTALL_PREFIX}/${INSTALL_BINDIR}")
+    endif()
+    if(IS_ABSOLUTE "${INSTALL_PLUGINSDIR}")
+        set(_pluginsdir "${INSTALL_PLUGINSDIR}")
+    else()
+        set(_pluginsdir "${CMAKE_INSTALL_PREFIX}/${INSTALL_PLUGINSDIR}")
+    endif()
+    if(IS_ABSOLUTE "${INSTALL_QMLDIR}")
+        set(_qmldir "${INSTALL_QMLDIR}")
+    else()
+        set(_qmldir "${CMAKE_INSTALL_PREFIX}/${INSTALL_QMLDIR}")
+    endif()
+
     # Target
     liri_add_executable("${name}"
         SOURCES ${_arg_SOURCES}
@@ -60,7 +77,7 @@ function(liri_add_test name)
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     set_tests_properties("${name}" PROPERTIES RUN_SERIAL ${_arg_RUN_SERIAL})
-    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "PATH=${CMAKE_INSTALL_PREFIX}/${INSTALL_BINDIR}${LIRI_PATH_SEPARATOR}$ENV{PATH}")
-    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "QT_PLUGIN_PATH=${CMAKE_INSTALL_PREFIX}/${INSTALL_PLUGINSDIR}${LIRI_PATH_SEPARATOR}$ENV{QT_PLUGIN_PATH}")
-    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "QML2_IMPORT_PATH=${CMAKE_INSTALL_PREFIX}/${INSTALL_QMLDIR}${LIRI_PATH_SEPARATOR}$ENV{QML2_IMPORT_PATH}")
+    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "PATH=${_bindir}${LIRI_PATH_SEPARATOR}$ENV{PATH}")
+    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "QT_PLUGIN_PATH=${_pluginsdir}${LIRI_PATH_SEPARATOR}$ENV{QT_PLUGIN_PATH}")
+    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "QML2_IMPORT_PATH=${_qmldir}${LIRI_PATH_SEPARATOR}$ENV{QML2_IMPORT_PATH}")
 endfunction()

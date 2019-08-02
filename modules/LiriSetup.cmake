@@ -52,20 +52,20 @@ set(CMAKE_AUTOUIC ON)
 
 ## Enable Clazy warnings:
 if(CLANG)
-    option(ENABLE_CLAZY "Enable Clazy warnings" OFF)
-    add_feature_info("Clazy" ENABLE_CLAZY "Clazy warnings")
+    option(LIRI_ENABLE_CLAZY "Enable Clazy warnings" OFF)
+    add_feature_info("Clazy" LIRI_ENABLE_CLAZY "Clazy warnings")
 
-    if(ENABLE_CLAZY)
-        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClangLazy${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clang-lazy")
+    if(LIRI_ENABLE_CLAZY)
+        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClazyPlugin${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clazy")
     endif()
 endif()
 
 ## Enable coverage:
 if(GCC)
-    option(ENABLE_COVERAGE "Enable GCov code coverage support (gcc only)" OFF)
-    add_feature_info("Coverage" ENABLE_COVERAGE "Code coverage (gcc only)")
+    option(LIRI_ENABLE_COVERAGE "Enable GCov code coverage support (gcc only)" OFF)
+    add_feature_info("Coverage" LIRI_ENABLE_COVERAGE "Code coverage (gcc only)")
 
-    if(ENABLE_COVERAGE)
+    if(LIRI_ENABLE_COVERAGE)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
     endif()
@@ -75,10 +75,8 @@ endif()
 include(LiriBuild)
 
 ## Enable testing:
-option(BUILD_TESTING "Build automated tests" ON)
-add_feature_info("Testing" BUILD_TESTING "Automated tests")
+include(CTest)
 if(BUILD_TESTING)
-    include(CTest)
     enable_testing()
 endif()
 

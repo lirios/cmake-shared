@@ -32,8 +32,8 @@ function(liri_add_qml_plugin name)
     # Parse arguments
     _liri_parse_all_arguments(
         _arg "liri_add_qml_plugin"
-        ""
-        "MODULE_PATH;VERSION"
+	"STATIC"
+        "MODULE_PATH;VERSION;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
     )
@@ -67,7 +67,7 @@ function(liri_add_qml_plugin name)
         add_custom_target(qmltypes)
     endif()
     set(qmltypes_target "${target}-qmltypes")
-    set(plugins_qmltypes "${CMAKE_CURRENT_SOURCE_DIR}/plugins.qmltypes")
+    set(plugins_qmltypes "${CMAKE_CURRENT_BINARY_DIR}/plugins.qmltypes")
     string(REPLACE "/" "." _module_name "${_arg_MODULE_PATH}")
     add_custom_target("${qmltypes_target}"
         BYPRODUCTS "${plugins_qmltypes}"
@@ -81,11 +81,32 @@ function(liri_add_qml_plugin name)
     endif()
 
     # Target
-    add_library("${target}" SHARED)
+    if(_arg_STATIC)
+        add_library("${target}" STATIC)
+    else()
+        add_library("${target}" SHARED)
+    endif()
     if(DEFINED _arg_RESOURCES)
-        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        if(${_arg_QTQUICK_COMPILER})
+            find_package(Qt5QuickCompiler)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
+                list(APPEND _arg_SOURCES ${_arg_RESOURCES})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+            endif()
+        else()
+            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
+
+    set(_static_defines "")
+    if (_arg_STATIC)
+        set(_static_defines "QT_STATICPLUGIN")
+    endif()
+
     extend_target("${target}"
         SOURCES
             ${_arg_SOURCES}
@@ -103,8 +124,11 @@ function(liri_add_qml_plugin name)
         DEFINES
             ${_arg_DEFINES}
             QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
+            QT_NO_JAVA_STYLE_ITERATORS
             QT_USE_QSTRINGBUILDER
             QT_DEPRECATED_WARNINGS
+	    "${_static_defines}"
+	    QT_PLUGIN
         EXPORT_IMPORT_CONDITION
             LIRI_BUILD_${name_upper}_LIB
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
@@ -119,5 +143,7 @@ function(liri_add_qml_plugin name)
     if(MINGW)
         set_target_properties(${target} PROPERTIES PREFIX "" IMPORT_PREFIX "")
     endif()
-    install(TARGETS "${target}" DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
+    if(NOT _arg_STATIC)
+        install(TARGETS "${target}" DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
+    endif()
 endfunction()

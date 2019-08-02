@@ -34,7 +34,7 @@ function(liri_add_executable name)
     _liri_parse_all_arguments(
         _arg "liri_add_executable"
         "GUI;NO_TARGET_INSTALLATION"
-        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY"
+        "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY;QTQUICK_COMPILER"
         "EXE_FLAGS;${__default_private_args};APPDATA;DESKTOP"
         ${ARGN}
     )
@@ -49,7 +49,18 @@ function(liri_add_executable name)
 
     add_executable("${name}" ${_arg_EXE_FLAGS})
     if(DEFINED _arg_RESOURCES)
-        qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        if(${_arg_QTQUICK_COMPILER})
+            find_package(Qt5QuickCompiler)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
+                list(APPEND _arg_SOURCES ${_arg_RESOURCES})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+            endif()
+        else()
+            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
+        endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
     if(DEFINED _arg_APPDATA)
@@ -64,7 +75,12 @@ function(liri_add_executable name)
             "${CMAKE_CURRENT_SOURCE_DIR}"
             "${CMAKE_CURRENT_BINARY_DIR}"
             ${_arg_INCLUDE_DIRECTORIES}
-        DEFINES ${_arg_DEFINES}
+        DEFINES
+            QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
+            QT_NO_JAVA_STYLE_ITERATORS
+            QT_USE_QSTRINGBUILDER
+            QT_DEPRECATED_WARNINGS
+            ${_arg_DEFINES}
         LIBRARIES ${_arg_LIBRARIES}
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
