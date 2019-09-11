@@ -63,10 +63,6 @@ function(liri_add_plugin name)
         endif()
         list(APPEND _arg_SOURCES ${RESOURCES})
     endif()
-    set_target_properties("${target}" PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_PLUGINSDIR}/${_arg_TYPE}"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_BINDIR}"
-    )
 
     set(_static_defines "")
     if (_arg_STATIC)
