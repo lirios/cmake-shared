@@ -107,7 +107,7 @@ function(liri_add_qml_plugin name)
         set(_static_defines "QT_STATICPLUGIN")
     endif()
 
-    extend_target("${target}"
+    liri_extend_target("${target}"
         SOURCES
             ${_arg_SOURCES}
             ${_arg_QML_FILES}

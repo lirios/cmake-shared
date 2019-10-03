@@ -69,7 +69,7 @@ function(liri_add_executable name)
     if(DEFINED _arg_DESKTOP)
         list(APPEND _arg_SOURCES ${_arg_DESKTOP})
     endif()
-    extend_target("${name}"
+    liri_extend_target("${name}"
         SOURCES ${_arg_SOURCES}
         INCLUDE_DIRECTORIES
             "${CMAKE_CURRENT_SOURCE_DIR}"

@@ -153,12 +153,12 @@ set(__default_public_args "PUBLIC_LIBRARIES;PUBLIC_INCLUDE_DIRECTORIES;PUBLIC_DE
 
 # This function can be used to add sources/libraries/etc. to the specified CMake target
 # if the provided CONDITION evaluates to true.
-function(extend_target target)
+function(liri_extend_target target)
     if(NOT TARGET "${target}")
         message(FATAL_ERROR "Trying to extend non-existing target \"${target}\".")
     endif()
     _liri_parse_all_arguments(
-        _arg "extend_target"
+        _arg "liri_extend_target"
         ""
         "EXPORT_IMPORT_CONDITION"
 	"CONDITION;${__default_public_args};${__default_private_args};COMPILE_FLAGS"

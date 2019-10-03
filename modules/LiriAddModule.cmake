@@ -127,7 +127,7 @@ function(liri_add_module name)
     set(include_dir "${parent_include_dir}/${module}")
 
     # Setup the public target
-    extend_target("${target}"
+    liri_extend_target("${target}"
         SOURCES ${_arg_SOURCES}
         PUBLIC_INCLUDE_DIRECTORIES
             "$<BUILD_INTERFACE:${parent_include_dir}>"
