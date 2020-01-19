@@ -77,7 +77,6 @@ function(liri_add_executable name)
             ${_arg_INCLUDE_DIRECTORIES}
         DEFINES
             QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
-            QT_NO_JAVA_STYLE_ITERATORS
             QT_USE_QSTRINGBUILDER
             QT_DEPRECATED_WARNINGS
             ${_arg_DEFINES}
