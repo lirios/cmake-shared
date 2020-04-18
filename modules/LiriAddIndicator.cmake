@@ -53,12 +53,12 @@ function(liri_add_indicator name)
     endif()
     get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
 
-    # Sources
-    set(_sources ${_arg_QML_FILES} ${_arg_METADATA})
-
     # Translations
     file(GLOB _translations "${_translations_path}/*_*.ts")
     qt5_add_translation(_qm_FILES ${_translations})
+
+    # Sources
+    set(_sources ${_arg_QML_FILES} ${_arg_METADATA} ${_qm_FILES})
 
     # Target
     set(target "${name}Indicator")
