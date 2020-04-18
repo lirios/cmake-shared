@@ -49,7 +49,7 @@ function(liri_add_indicator name)
     if(DEFINED _arg_TRANSLATIONS_PATH)
         set(_translations_path "${_arg_TRANSLATIONS_PATH}")
     else()
-        set(_translations_path "translations")
+        set(_translations_path "${CMAKE_CURRENT_SOURCE_DIR}/translations")
     endif()
     get_filename_component(_translations_path "${_translations_path}" ABSOLUTE)
 
