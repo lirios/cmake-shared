@@ -161,7 +161,7 @@ function(liri_extend_target target)
         _arg "liri_extend_target"
         ""
         "EXPORT_IMPORT_CONDITION"
-	"CONDITION;${__default_public_args};${__default_private_args};COMPILE_FLAGS"
+	"CONDITION;${__default_public_args};${__default_private_args};COMPILE_FLAGS;OUTPUT_NAME"
         ${ARGN}
     )
 
