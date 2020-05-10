@@ -3,8 +3,8 @@ CMake Shared
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![GitHub release](https://img.shields.io/github/release/lirios/cmake-shared.svg)](https://github.com/lirios/cmake-shared)
-[![CI](https://github.com/lirios/cmake-shared/workflows/CI/badge.svg?branch=develop)](https://github.com/lirios/cmake-shared/actions?query=workflow%3ACI)
 [![GitHub issues](https://img.shields.io/github/issues/lirios/cmake-shared.svg)](https://github.com/lirios/cmake-shared/issues)
+[![CI](https://github.com/lirios/cmake-shared/workflows/CI/badge.svg?branch=develop)](https://github.com/lirios/cmake-shared/actions?query=workflow%3ACI)
 
 Shared functions and macros for projects using the CMake build system.
 
