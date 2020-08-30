@@ -50,7 +50,5 @@ jobs:
           repository: artifacts-${{ steps.extract_branch.outputs.branch }}
           package: cmake-shared
           version: '1.0'
-          delete_file: true
-          recreate_version: true
           calculate_metadata: false
           publish: '1'
