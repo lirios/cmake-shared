@@ -136,6 +136,7 @@ function(_qdbusxml2cpp_command target infile)
     add_custom_command(
         OUTPUT "${_header_filename}" "${_source_filename}"
         COMMAND Qt5::qdbusxml2cpp ${_arg_FLAGS} "${_option}" "${_header_filename}:${_source_filename}" "${infile}"
+        COMMAND echo "// clazy:skip" >> "${_header_filename}"
         DEPENDS "${infile}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         VERBATIM
