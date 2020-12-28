@@ -25,10 +25,10 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-function(liri_add_indicator name)
+function(liri_add_statusareaextension name)
     # Parse arguments
     _liri_parse_all_arguments(
-        _arg "liri_add_indicator"
+        _arg "liri_add_statusareaextension"
         ""
         "METADATA;TRANSLATIONS_PATH"
         "QML_FILES"
@@ -61,20 +61,20 @@ function(liri_add_indicator name)
     set(_sources ${_arg_QML_FILES} ${_arg_METADATA} ${_qm_FILES})
 
     # Target
-    set(target "${name}Indicator")
+    set(target "${name}StatusAreaExtension")
     add_custom_target("${target}" ALL SOURCES ${_sources})
 
     # Install
     install(
         FILES ${_arg_METADATA}
-        DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}"
+        DESTINATION "${INSTALL_DATADIR}/liri-shell/statusarea/${name_lower}"
     )
     install(
         FILES ${_arg_QML_FILES}
-        DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}/contents"
+        DESTINATION "${INSTALL_DATADIR}/liri-shell/statusarea/${name_lower}/contents"
     )
     install(
         FILES ${_qm_FILES}
-        DESTINATION "${INSTALL_DATADIR}/liri-shell/indicators/${name_lower}/translations"
+        DESTINATION "${INSTALL_DATADIR}/liri-shell/statusarea/${name_lower}/translations"
     )
 endfunction()
