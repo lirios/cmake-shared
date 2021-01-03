@@ -30,7 +30,7 @@ function(liri_add_statusareaextension name)
     _liri_parse_all_arguments(
         _arg "liri_add_statusareaextension"
         ""
-        "METADATA;TRANSLATIONS_PATH"
+        "METADATA;CONTENTS_DIRECTORY;TRANSLATIONS_PATH"
         "QML_FILES"
         ${ARGN}
         )
@@ -43,6 +43,11 @@ function(liri_add_statusareaextension name)
     # Assume a default value if metadata is not specified
     if(NOT _arg_METADATA)
         set(_arg_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/metadata.desktop")
+    endif()
+
+    # Assume a default value for the contents directgory
+    if(NOT _arg_CONTENTS_DIRECTORY)
+        set(_arg_CONTENTS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/contents")
     endif()
 
     # Translation directory
@@ -70,7 +75,7 @@ function(liri_add_statusareaextension name)
         DESTINATION "${INSTALL_DATADIR}/liri-shell/statusarea/${name_lower}"
     )
     install(
-        FILES ${_arg_QML_FILES}
+        DIRECTORY ${_arg_CONTENTS_DIRECTORY}/
         DESTINATION "${INSTALL_DATADIR}/liri-shell/statusarea/${name_lower}/contents"
     )
     install(
