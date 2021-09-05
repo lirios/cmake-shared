@@ -33,22 +33,3 @@ jobs:
           cmake .. -DCMAKE_INSTALL_PREFIX=/usr
           make -j
           make install
-      - name: Package
-        if: github.event_name == 'push'
-        run: |
-          cd build
-          mkdir -p artifacts
-          tar czf artifacts/cmake-shared.tar.gz -T install_manifest.txt
-      - name: Archive result
-        if: github.event_name == 'push'
-        uses: liri-infra/upload-bintray@master
-        with:
-          file: build/artifacts/cmake-shared.tar.gz
-          api_user: ${{ secrets.BINTRAY_API_USER }}
-          api_key: ${{ secrets.BINTRAY_API_KEY }}
-          repository_user: liri
-          repository: artifacts-${{ steps.extract_branch.outputs.branch }}
-          package: cmake-shared
-          version: '1.0'
-          calculate_metadata: false
-          publish: '1'
