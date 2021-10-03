@@ -184,6 +184,29 @@ function(liri_add_module name)
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         )
     else()
+        # Automatically generate the list of private headers
+        if(NOT DEFINED _arg_PRIVATE_HEADERS)
+            set(_private_headers)
+
+            foreach(_source_file IN LISTS _arg_SOURCES)
+                get_filename_component(directory "${_source_file}" DIRECTORY)
+                get_filename_component(filename "${_source_file}" NAME)
+                get_filename_component(basename "${_source_file}" NAME_WLE)
+                get_filename_component(ext "${_source_file}" EXT)
+
+                string(COMPARE EQUAL "${ext}" ".h" is_header)
+                string(REGEX MATCH "_p$" is_private "${basename}")
+
+                if(is_header AND is_private)
+                    list(APPEND _private_headers "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/${filename}")
+                endif()
+            endforeach()
+
+            if(_private_headers)
+                set(_arg_PRIVATE_HEADERS "${_private_headers}")
+            endif()
+        endif()
+
         if(DEFINED _arg_FORWARDING_HEADERS)
             # Public headers and forward headers
             ecm_generate_headers(
