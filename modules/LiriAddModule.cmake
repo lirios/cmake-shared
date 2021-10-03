@@ -25,6 +25,82 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+include(CMakeParseArguments)
+
+function(_liri_internal_forward_headers destination_var)
+    set(options)
+    set(oneValueArgs OUTPUT_DIR REQUIRED_HEADERS MODULE_NAME)
+    set(multiValueArgs HEADER_NAMES)
+    cmake_parse_arguments(_arg "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments passed to _liri_internal_forward_headers: (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
+    if(NOT _arg_HEADER_NAMES)
+        message(FATAl_ERROR "Missing HEADER_NAMES argument to _liri_internal_forward_headers.")
+    endif()
+    if(NOT _arg_OUTPUT_DIR)
+        set(_arg_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+
+    foreach(_entry IN LISTS _arg_HEADER_NAMES)
+        # We have an entry like either of the following examples:
+        #   ClassName1,ClassName2:path/to/header.h
+        #   ClassName1,ClassName2
+        #   ClassName
+        string(REPLACE ":" ";" _mapping ${_entry})
+        list(GET _mapping 0 _classnameentry)
+        string(REPLACE "," ";" _classnames ${_classnameentry})
+        list(GET _classnames 0 _baseclass)
+
+        # Determine the actual header, either from whatever the user indicated
+        # or the first class name
+        list(LENGTH _mapping _has_actualheader)
+        if(_has_actualheader GREATER 1)
+            list(GET _mapping 1 _actualheader)
+        else()
+            set(_actualheader)
+        endif()
+        if(NOT _actualheader)
+            string(TOLOWER "${_baseclass}.h" _actualheader)
+        endif()
+        if(NOT IS_ABSOLUTE "${_actualheader}")
+            set(_actualheader "${CMAKE_CURRENT_SOURCE_DIR}/${_actualheader}")
+        endif()
+        if(NOT EXISTS "${_actualheader}")
+            message(FATAL_ERROR "Could not find \"${_actualheader}\".")
+        endif()
+
+        # Create the forward header
+        foreach(_classname IN LISTS _classnames)
+            set(_forwardheader "${_arg_OUTPUT_DIR}/${_classname}")
+            if(NOT EXISTS "${_forwardheader}")
+                file(WRITE "${_forwardheader}" "#include \"${_actualheader}\"\n")
+            endif()
+            list(APPEND ${destination_var} "${_forwardheader}")
+        endforeach()
+
+        list(APPEND _required_headers "${_actualheader}")
+
+        unset(_actualheader)
+    endforeach()
+
+    # Combine required headers into one convenience header
+    if(_arg_MODULE_NAME)
+        set(_common_header "${_arg_OUTPUT_DIR}/${_arg_MODULE_NAME}")
+        file(WRITE "${_common_header}" "// This header includes all the header files of the \"${_arg_MODULE_NAME}\" module.\n\n")
+        foreach(_header IN LISTS _required_headers)
+            get_filename_component(_header_basename "${_header}" NAME)
+            file(APPEND "${_common_header}" "#include <${_arg_MODULE_NAME}/${_header_basename}>\n")
+        endforeach()
+        list(APPEND ${destination_var} "${_common_header}")
+    endif()
+
+    set(${destination_var} ${${destination_var}} PARENT_SCOPE)
+    if(_arg_REQUIRED_HEADERS)
+        set(${_arg_REQUIRED_HEADERS} ${${_arg_REQUIRED_HEADERS}} ${_required_headers} PARENT_SCOPE)
+    endif()
+endfunction()
+
 # This is the main entry function for creating a Liri module, that typically
 # consists of a library, public header files and private header files.
 #
@@ -209,13 +285,12 @@ function(liri_add_module name)
 
         if(DEFINED _arg_FORWARDING_HEADERS)
             # Public headers and forward headers
-            ecm_generate_headers(
+            _liri_internal_forward_headers(
                 ${target}_FORWARDING_HEADERS
-                PREFIX "."
                 OUTPUT_DIR "${include_dir}"
                 HEADER_NAMES ${_arg_FORWARDING_HEADERS}
                 REQUIRED_HEADERS ${target}_REQUIRED_HEADERS
-                COMMON_HEADER "${module}"
+                MODULE_NAME "${module}"
             )
         endif()
 
