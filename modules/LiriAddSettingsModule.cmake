@@ -27,13 +27,16 @@
 
 function(liri_add_settings_module name)
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_settings_module"
+    cmake_parse_arguments(
+        _arg
         ""
         "METADATA;TRANSLATIONS_PATH"
         "CONTENTS"
         ${ARGN}
-        )
+    )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_settings_module (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     # Find packages we need
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core LinguistTools)

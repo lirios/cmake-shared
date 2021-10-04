@@ -2,6 +2,7 @@
 set(_LIRI_VERSION_HEADER_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/LiriModuleVersion.h.in")
 set(_LIRI_MODULE_CONFIG_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/LiriModuleConfig.cmake.in")
 
+include(CMakeParseArguments)
 include(GNUInstallDirs)
 
 # Install locations:
@@ -45,75 +46,17 @@ endif()
 # Functions and macros:
 
 
-# Print all variables defined in the current scope.
-macro(_debug_print_variables)
-    cmake_parse_arguments(__arg "DEDUP" "" "MATCH;IGNORE" ${ARGN})
-    message("Known Variables:")
-    get_cmake_property(__variableNames VARIABLES)
-    list (SORT __variableNames)
-    if (__arg_DEDUP)
-        list(REMOVE_DUPLICATES __variableNames)
-    endif()
-
-    foreach(__var ${__variableNames})
-        set(__ignore OFF)
-        foreach(__i ${__arg_IGNORE})
-            if(__var MATCHES "${__i}")
-                set(__ignore ON)
-                break()
-            endif()
-        endforeach()
-
-        if (__ignore)
-            continue()
-        endif()
-
-        set(__show OFF)
-        foreach(__i ${__arg_MATCH})
-            if(__var MATCHES "${__i}")
-                set(__show ON)
-                break()
-            endif()
-        endforeach()
-
-        if (__show)
-            message("    ${__var}=${${__var}}.")
-        endif()
-    endforeach()
-endmacro()
-
-
-macro(assert)
-    if (${ARGN})
-    else()
-        message(FATAL_ERROR "ASSERT: ${ARGN}.")
-    endif()
-endmacro()
-
-
-# A version of cmake_parse_arguments that makes sure all arguments are processed and errors out
-# with a message about ${type} having received unknown arguments.
-macro(_liri_parse_all_arguments result type flags options multiopts)
-    cmake_parse_arguments(${result} "${flags}" "${options}" "${multiopts}" ${ARGN})
-    if(DEFINED ${result}_UNPARSED_ARGUMENTS)
-        message(FATAL_ERROR "Unknown arguments were passed to ${type} (${${result}_UNPARSED_ARGUMENTS}).")
-    endif()
-endmacro()
-
-
-function(_liri_module_name name result)
-    set("${result}" "Liri${name}" PARENT_SCOPE)
-endfunction()
-
-
 function(_qdbusxml2cpp_command target infile)
-    _liri_parse_all_arguments(
-        _arg "_qdbusxml2cpp_command"
+    cmake_parse_arguments(
+        _arg
         "ADAPTOR;INTERFACE"
         ""
         "FLAGS"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to _qdbusxml2cpp_command (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     if((_arg_ADAPTOR AND _arg_INTERFACE) OR (NOT _arg_ADAPTOR AND NOT _arg_INTERFACE))
         message(FATAL_ERROR "_qdbusxml2cpp_command needs either ADAPTOR or INTERFACE.")
@@ -160,13 +103,16 @@ function(liri_extend_target target)
     if(NOT TARGET "${target}")
         message(FATAL_ERROR "Trying to extend non-existing target \"${target}\".")
     endif()
-    _liri_parse_all_arguments(
-        _arg "liri_extend_target"
+    cmake_parse_arguments(
+        _arg
         ""
         "EXPORT_IMPORT_CONDITION"
 	"CONDITION;${__default_public_args};${__default_private_args};COMPILE_FLAGS;OUTPUT_NAME"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_extend_target (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     if("x${_arg_CONDITION}" STREQUAL "x")
         set(_arg_CONDITION ON)

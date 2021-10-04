@@ -25,8 +25,6 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-include(CMakeParseArguments)
-
 set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/liri-forward-headers")
 
 function(_liri_internal_forward_headers destination_var)
@@ -123,13 +121,16 @@ function(liri_add_module name)
     include(ECMGeneratePkgConfigFile)
 
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_module"
+    cmake_parse_arguments(
+        _arg
         "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
         "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;FORWARDING_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_module (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     # A 0.x version is going to be 1.x once it's ready, but we don't
     # want to change find_package(Liri0${name}) instructions everywhere
@@ -144,7 +145,7 @@ function(liri_add_module name)
     if(DEFINED _arg_MODULE_NAME)
         set(module "${_arg_MODULE_NAME}")
     else()
-        _liri_module_name("${name}" module)
+        set(module "Liri${name}")
     endif()
     string(TOUPPER "${module}" module_upper)
     string(TOLOWER "${module}" module_lower)

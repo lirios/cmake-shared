@@ -30,13 +30,16 @@ function(liri_add_test name)
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core Test)
 
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_test"
+    cmake_parse_arguments(
+        _arg
         "RUN_SERIAL"
         ""
         "${__default_private_args}"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_test (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     # Absolute installation paths
     if(IS_ABSOLUTE "${INSTALL_BINDIR}")
