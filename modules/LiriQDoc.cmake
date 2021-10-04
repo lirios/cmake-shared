@@ -27,13 +27,16 @@
 
 function(liri_install_doc qdoc_filename)
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_install_doc"
+    cmake_parse_arguments(
+        _arg
         ""
         "OUTPUT_DIRECTORY_VARIABLE"
         "ENVIRONMENT"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_install_doc (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     find_package(Qt5Core QUIET)
     if(TARGET Qt5::qmake)

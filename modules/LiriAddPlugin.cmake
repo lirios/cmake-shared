@@ -30,13 +30,16 @@ function(liri_add_plugin name)
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
 
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_plugin"
+    cmake_parse_arguments(
+        _arg
 	"STATIC"
         "TYPE;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args}"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_plugin (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     set(target "${name}")
     string(TOUPPER "${name}" name_upper)

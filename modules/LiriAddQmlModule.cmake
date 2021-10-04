@@ -27,13 +27,16 @@
 
 function(liri_add_qml_module name)
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_qml_module"
+    cmake_parse_arguments(
+        _arg
         ""
         "MODULE_PATH;VERSION"
         "QML_FILES"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_qml_module (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     if(NOT DEFINED _arg_MODULE_PATH)
         message(FATAL_ERROR "Missing argument MODULE_PATH.")

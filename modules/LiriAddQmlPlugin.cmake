@@ -30,13 +30,16 @@ function(liri_add_qml_plugin name)
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Qml Quick)
 
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_qml_plugin"
+    cmake_parse_arguments(
+        _arg
 	"STATIC"
         "MODULE_PATH;VERSION;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_qml_plugin (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     if(NOT DEFINED _arg_MODULE_PATH)
         message(FATAL_ERROR "Missing argument MODULE_PATH.")

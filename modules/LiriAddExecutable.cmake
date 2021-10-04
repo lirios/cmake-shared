@@ -31,13 +31,16 @@ function(liri_add_executable name)
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
 
     # Parse arguments
-    _liri_parse_all_arguments(
-        _arg "liri_add_executable"
+    cmake_parse_arguments(
+        _arg
         "GUI;NO_TARGET_INSTALLATION"
         "OUTPUT_NAME;OUTPUT_DIRECTORY;INSTALL_DIRECTORY;DESKTOP_INSTALL_DIRECTORY;QTQUICK_COMPILER"
         "EXE_FLAGS;${__default_private_args};APPDATA;DESKTOP"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_add_executable (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     if("x${_arg_OUTPUT_NAME}" STREQUAL "x")
         set(_arg_OUTPUT_NAME "${name}")
