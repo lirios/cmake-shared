@@ -27,6 +27,8 @@
 
 include(CMakeParseArguments)
 
+set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/liri-forward-headers")
+
 function(_liri_internal_forward_headers destination_var)
     set(options)
     set(oneValueArgs OUTPUT_DIR REQUIRED_HEADERS MODULE_NAME)
@@ -36,7 +38,7 @@ function(_liri_internal_forward_headers destination_var)
         message(FATAL_ERROR "Unknown arguments passed to _liri_internal_forward_headers: (${_arg_UNPARSED_ARGUMENTS}).")
     endif()
     if(NOT _arg_HEADER_NAMES)
-        message(FATAl_ERROR "Missing HEADER_NAMES argument to _liri_internal_forward_headers.")
+        message(FATAL_ERROR "Missing HEADER_NAMES argument to _liri_internal_forward_headers.")
     endif()
     if(NOT _arg_OUTPUT_DIR)
         set(_arg_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
@@ -54,34 +56,36 @@ function(_liri_internal_forward_headers destination_var)
 
         # Determine the actual header, either from whatever the user indicated
         # or the first class name
-        list(LENGTH _mapping _has_actualheader)
-        if(_has_actualheader GREATER 1)
-            list(GET _mapping 1 _actualheader)
+        list(LENGTH _mapping _has_actual_header)
+        if(_has_actual_header GREATER 1)
+            list(GET _mapping 1 _actual_header)
         else()
-            set(_actualheader)
+            set(_actual_header)
         endif()
-        if(NOT _actualheader)
-            string(TOLOWER "${_baseclass}.h" _actualheader)
+        if(NOT _actual_header)
+            string(TOLOWER "${_baseclass}.h" _actual_header)
         endif()
-        if(NOT IS_ABSOLUTE "${_actualheader}")
-            set(_actualheader "${CMAKE_CURRENT_SOURCE_DIR}/${_actualheader}")
+        if(NOT IS_ABSOLUTE "${_actual_header}")
+            set(_actual_header "${CMAKE_CURRENT_SOURCE_DIR}/${_actual_header}")
         endif()
-        if(NOT EXISTS "${_actualheader}")
-            message(FATAL_ERROR "Could not find \"${_actualheader}\".")
+        if(NOT EXISTS "${_actual_header}")
+            message(FATAL_ERROR "Could not find \"${_actual_header}\".")
         endif()
 
-        # Create the forward header
+        # Create headers with class name
         foreach(_classname IN LISTS _classnames)
-            set(_forwardheader "${_arg_OUTPUT_DIR}/${_classname}")
-            if(NOT EXISTS "${_forwardheader}")
-                file(WRITE "${_forwardheader}" "#include \"${_actualheader}\"\n")
-            endif()
-            list(APPEND ${destination_var} "${_forwardheader}")
+            set(_classname_header "${_arg_OUTPUT_DIR}/${_classname}")
+            file(WRITE "${_classname_header}" "#include \"${_actual_header}\"\n")
+            list(APPEND ${destination_var} "${_classname_header}")
         endforeach()
 
-        list(APPEND _required_headers "${_actualheader}")
+        # Forward local headers
+        get_filename_component(_base_actual_header "${_actual_header}" NAME)
+        file(WRITE "${_arg_OUTPUT_DIR}/${_base_actual_header}" "#include \"${_actual_header}\"\n")
 
-        unset(_actualheader)
+        list(APPEND _required_headers "${_actual_header}")
+
+        unset(_actual_header)
     endforeach()
 
     # Combine required headers into one convenience header
@@ -90,7 +94,7 @@ function(_liri_internal_forward_headers destination_var)
         file(WRITE "${_common_header}" "// This header includes all the header files of the \"${_arg_MODULE_NAME}\" module.\n\n")
         foreach(_header IN LISTS _required_headers)
             get_filename_component(_header_basename "${_header}" NAME)
-            file(APPEND "${_common_header}" "#include <${_arg_MODULE_NAME}/${_header_basename}>\n")
+            file(APPEND "${_common_header}" "#include \"${_header_basename}\"\n")
         endforeach()
         list(APPEND ${destination_var} "${_common_header}")
     endif()
@@ -260,9 +264,10 @@ function(liri_add_module name)
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         )
     else()
-        # Automatically generate the list of private headers
-        if(NOT DEFINED _arg_PRIVATE_HEADERS)
+        # Automatically generate the list of private headers and/or forwarding headers
+        if(NOT DEFINED _arg_PRIVATE_HEADERS OR NOT DEFINED _arg_FORWARDING_HEADERS)
             set(_private_headers)
+            set(_forwarding_headers)
 
             foreach(_source_file IN LISTS _arg_SOURCES)
                 get_filename_component(directory "${_source_file}" DIRECTORY)
@@ -273,13 +278,35 @@ function(liri_add_module name)
                 string(COMPARE EQUAL "${ext}" ".h" is_header)
                 string(REGEX MATCH "_p$" is_private "${basename}")
 
-                if(is_header AND is_private)
-                    list(APPEND _private_headers "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/${filename}")
+                if(is_header)
+                    if(is_private AND NOT DEFINED _arg_PRIVATE_HEADERS)
+                        list(APPEND _private_headers "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/${filename}")
+                    endif()
+                    if(NOT is_private AND NOT DEFINED _arg_FORWARDING_HEADERS)
+                        if(NOT IS_ABSOLUTE)
+                            set(_source_file "${CMAKE_CURRENT_SOURCE_DIR}/${_source_file}")
+                        endif()
+                        execute_process(
+                            COMMAND ${_fwd_headers_exe} "${_source_file}"
+                            OUTPUT_VARIABLE _fwd_headers_out
+                            RESULT_VARIABLE _fwd_headers_ret
+                        )
+                        string(STRIP "${_fwd_headers_out}" _fwd_headers_out)
+                        if(NOT _fwd_headers_ret EQUAL 0)
+                            message(FATAL_ERROR "Failed to run liri-forward-headers, return code: ${_fwd_headers_ret}")
+                        endif()
+                        if(NOT _fwd_headers_out STREQUAL "")
+                            list(APPEND _forwarding_headers "${_fwd_headers_out}")
+                        endif()
+                    endif()
                 endif()
             endforeach()
 
             if(_private_headers)
                 set(_arg_PRIVATE_HEADERS "${_private_headers}")
+            endif()
+            if(_forwarding_headers)
+                set(_arg_FORWARDING_HEADERS "${_forwarding_headers}")
             endif()
         endif()
 
