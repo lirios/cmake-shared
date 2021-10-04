@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2021 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+# SPDX-FileCopyrightText: 2016 The Qt Company Ltd.
+# SPDX-FileCopyrightText: 2016 Intel Corporation.
+#
+# SPDX-License-Identifier: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
+# This code is a Python port of a fraction of syncqt.pl from Qt.
+
+import re
+
+# Add macros and keywords that go after the class-name of a class
+# definition to `post_kw`
+post_kw = r'(Q_DECL_FINAL|final|sealed)'
+symbol_rx_str = r'^ *(template *<.*> *)?(class|struct) +([^ <>]* +)?((?!' + post_kw + r')[^<\s]+) ?(<[^>]*> ?)?\s*(?:' + post_kw + r')?\s*((,|:)\s*(public|protected|private) *.*)? *\{\}$'
+symbol_rx = re.compile(symbol_rx_str)
+
+
+def prepare(filename: str):
+    """Read the file and return a parsable string without line endings."""
+    parsable = ''
+
+    with open(filename, newline='\n') as f:
+        lines = f.readlines()
+        for line in lines:
+            # Remove line ending
+            line = line.replace('\r\n', '').replace('\n', '')
+
+            # Remove C++ comments
+            line = re.sub(r'//.*$', '', line)
+
+            # Put ';' after every Qt macro we know of
+            if re.match(r'^Q_[A-Z_0-9]*\(.*\)[\r\n]*$', line):
+                line += ';'
+            if re.match(r'^QT_(BEGIN|END)_HEADER[\r\n]*$', line):
+                line += ';'
+            if re.match(r'^QT_(BEGIN|END)_NAMESPACE(_[A-Z]+)*[\r\n]*$', line):
+                line += ';'
+            if re.match(r'QT_MODULE\(.*\)[\r\n]*$', line):
+                line += ';'
+            if re.match(r'^QT_WARNING_(PUSH|POP|DISABLE_\w+\(.*\))[\r\n]*$', line):
+                line += ';'
+
+            # Append line (without line ending) to the parsable string
+            parsable += ' ' + line
+
+    return parsable
+
+
+def class_names(parsable: str, enable_namespaces: bool):
+    """Parse string and return the list of classes."""
+    classes = []
+    last_definition = 0
+    namespaces = []
+
+    i = 0
+    while i < len(parsable):
+        # Reset definition
+        definition = ''
+
+        # Current character
+        c = parsable[i:i+1]
+
+        # Skip comment blocks
+        if parsable[i:i+2] == '/*':
+            i += 2
+            while i < len(parsable):
+                if parsable[i:i+2] == '*/':
+                    last_definition = i + 2
+                    i += 1
+                    break
+                i += 1
+        # Start of code block
+        elif c == '{':
+            brace_depth = 1
+            block_start = i + 1
+            done = False
+            i += 1
+            while i < len(parsable):
+                ignore = parsable[i:i+1]
+                if ignore == '{':
+                    brace_depth += 1
+                elif ignore == '}':
+                    brace_depth -= 1
+                    if brace_depth == 0:
+                        i2 = i + 1
+                        while i2 < len(parsable):
+                            end = parsable[i2:i2+1]
+                            if end == ';' or end != ' ':
+                                definition = parsable[last_definition:block_start] + '}'
+                                if end == ';':
+                                    i = i2
+                                last_definition = i + 1
+                                done = True
+                                break
+                            i2 += 1
+                if done:
+                    break
+                i += 1
+        # Next instruction
+        elif c == ';':
+            definition = parsable[last_definition:i+1]
+            last_definition = i + 1
+        # End of code block
+        elif c == '}':
+            # Could be the end of a namespace
+            if namespaces:
+                namespaces.pop()
+            last_definition = i + 1
+
+        # Namespaces
+        m = re.match(r' *namespace ([^ ]*) ', parsable[last_definition:i+1])
+        if m and parsable[i+1:i+2] == '{':
+            namespaces.append(m.group(1))
+
+            # Eat the opening { so that the condensing loop above doesn't see it
+            i += 1
+            last_definition = i + 1
+
+        # Analyze definitions
+        if definition:
+            # Clean up definition
+            definition = re.sub(r'[\n\r]', '', definition)
+            definition = re.sub(r'QT_DEPRECATED_X\s*\(\s*".*?"\s*\)', '', definition)
+
+            # Find symbols
+            symbols = []
+            m = re.match(r'^ *typedef *.*\(\*([^\)]*)\)\(.*\);$', definition)
+            if m:
+                symbols.append(m.group(1))
+            m = re.match(r'^ *typedef +(.*) +([^ ]*);$', definition)
+            if m:
+                symbols.append(m.group(2))
+            m = symbol_rx.match(definition)
+            if m:
+                symbols.append(m.group(4))
+            m = re.match(r'^ *Q_DECLARE_.*ITERATOR\((.*)\);$', definition)
+            if m:
+                symbols.append('Q' + m.group(1) + 'Iterator')
+                symbols.append('QMutable' + m.group(1) + 'Iterator')
+
+            for symbol in symbols:
+                if enable_namespaces and namespaces:
+                    symbol = '{}::{}'.format('::'.join(namespaces), symbol)
+                classes.append(symbol)
+
+        # Advance
+        i += 1
+
+    return classes
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Find classes defined in a C++ header')
+    parser.add_argument('header', metavar='FILE', type=str, help='Path to header file')
+
+    args = parser.parse_args()
+
+    parsable = prepare(args.header)
+    classes = class_names(parsable, False)
+    if classes:
+        print('{}:{}'.format(','.join(classes), args.header))
