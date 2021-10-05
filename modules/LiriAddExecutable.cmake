@@ -26,7 +26,7 @@
 #
 
 # This function creates a CMake target for a generic console or GUI binary.
-function(liri_add_executable name)
+function(liri_add_executable target)
     # Find packages we need
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
 
@@ -43,37 +43,24 @@ function(liri_add_executable name)
     endif()
 
     if("x${_arg_OUTPUT_NAME}" STREQUAL "x")
-        set(_arg_OUTPUT_NAME "${name}")
+        set(_arg_OUTPUT_NAME "${target}")
     endif()
 
     if ("x${_arg_OUTPUT_DIRECTORY}" STREQUAL "x")
         set(_arg_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${INSTALL_BINDIR}")
     endif()
 
-    add_executable("${name}" ${_arg_EXE_FLAGS})
-    if(DEFINED _arg_RESOURCES)
-        if(${_arg_QTQUICK_COMPILER})
-            find_package(Qt5QuickCompiler)
-            if(Qt5QuickCompiler_FOUND)
-                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
-                list(APPEND _arg_SOURCES ${_arg_RESOURCES})
-            else()
-                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
-                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
-            endif()
-        else()
-            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
-        endif()
-        list(APPEND _arg_SOURCES ${RESOURCES})
-    endif()
-    if(DEFINED _arg_APPDATA)
-        list(APPEND _arg_SOURCES ${_arg_APPDATA})
-    endif()
-    if(DEFINED _arg_DESKTOP)
-        list(APPEND _arg_SOURCES ${_arg_DESKTOP})
-    endif()
-    liri_extend_target("${name}"
-        SOURCES ${_arg_SOURCES}
+    # Add the target
+    add_executable("${target}" ${_arg_EXE_FLAGS} ${_arg_SOURCES})
+    set_target_properties("${target}" PROPERTIES
+        LIRI_TARGET_TYPE "executable"
+        OUTPUT_NAME "${_arg_OUTPUT_NAME}"
+        WIN32_EXECUTABLE "${_arg_GUI}"
+        MACOSX_BUNDLE "${_arg_GUI}"
+    )
+
+    # Extend the target
+    liri_extend_target("${target}"
         INCLUDE_DIRECTORIES
             "${CMAKE_CURRENT_SOURCE_DIR}"
             "${CMAKE_CURRENT_BINARY_DIR}"
@@ -84,25 +71,36 @@ function(liri_add_executable name)
             QT_DEPRECATED_WARNINGS
             ${_arg_DEFINES}
         LIBRARIES ${_arg_LIBRARIES}
+        RESOURCES ${_arg_RESOURCES}
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
         DBUS_INTERFACE_SOURCES ${_arg_DBUS_INTERFACE_SOURCES}
         DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
     )
-    set_target_properties("${name}" PROPERTIES
-        OUTPUT_NAME "${_arg_OUTPUT_NAME}"
-        WIN32_EXECUTABLE "${_arg_GUI}"
-        MACOSX_BUNDLE "${_arg_GUI}"
-    )
+
+    # Additional sources
+    if(_arg_APPDATA)
+        target_sources("${target}" PRIVATE "${_arg_APPDATA}")
+    endif()
+    if(_arg_DESKTOP)
+        target_sources("${target}" PRIVATE "${_arg_DESKTOP}")
+    endif()
+
+    # Set custom properties
+    if(_arg_QTQUICK_COMPILER)
+        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER ON)
+    else()
+        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER OFF)
+    endif()
 
     # Install executable
     if(NOT "${_arg_NO_TARGET_INSTALLATION}")
         if(DEFINED _arg_INSTALL_DIRECTORY)
-            install(TARGETS "${name}"
+            install(TARGETS "${target}"
                     BUNDLE DESTINATION "/Applications/${_arg_OUTPUT_NAME}"
                     RUNTIME DESTINATION "${_arg_INSTALL_DIRECTORY}")
         else()
-            install(TARGETS "${name}"
+            install(TARGETS "${target}"
                     BUNDLE DESTINATION "/Applications/${_arg_OUTPUT_NAME}"
                     RUNTIME DESTINATION ${INSTALL_TARGETS_DEFAULT_ARGS})
         endif()
@@ -128,4 +126,10 @@ function(liri_add_executable name)
             endif()
         endif()
     endif()
+endfunction()
+
+function(liri_finalize_executable target)
+    # This function right now is just an alias to liri_finalize_target()
+    # for consistency with the liri_finalize_<target type> convention
+    liri_finalize_target("${target}")
 endfunction()

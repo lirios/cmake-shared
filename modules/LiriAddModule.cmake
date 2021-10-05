@@ -29,7 +29,7 @@ set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/liri-forward-headers")
 
 function(_liri_internal_forward_headers destination_var)
     set(options)
-    set(oneValueArgs OUTPUT_DIR REQUIRED_HEADERS MODULE_NAME)
+    set(oneValueArgs OUTPUT_DIR MODULE_NAME)
     set(multiValueArgs HEADER_NAMES)
     cmake_parse_arguments(_arg "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     if(DEFINED _arg_UNPARSED_ARGUMENTS)
@@ -41,6 +41,8 @@ function(_liri_internal_forward_headers destination_var)
     if(NOT _arg_OUTPUT_DIR)
         set(_arg_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
     endif()
+
+    set(_required_headers)
 
     foreach(_entry IN LISTS _arg_HEADER_NAMES)
         # We have an entry like either of the following examples:
@@ -63,6 +65,7 @@ function(_liri_internal_forward_headers destination_var)
         if(NOT _actual_header)
             string(TOLOWER "${_baseclass}.h" _actual_header)
         endif()
+        get_filename_component(_actual_header_basename "${_actual_header}" NAME)
         if(NOT IS_ABSOLUTE "${_actual_header}")
             set(_actual_header "${CMAKE_CURRENT_SOURCE_DIR}/${_actual_header}")
         endif()
@@ -73,15 +76,12 @@ function(_liri_internal_forward_headers destination_var)
         # Create headers with class name
         foreach(_classname IN LISTS _classnames)
             set(_classname_header "${_arg_OUTPUT_DIR}/${_classname}")
-            file(WRITE "${_classname_header}" "#include \"${_actual_header}\"\n")
+            file(WRITE "${_classname_header}" "#include <${_arg_MODULE_NAME}/${_actual_header_basename}>\n")
             list(APPEND ${destination_var} "${_classname_header}")
         endforeach()
 
-        # Forward local headers
-        get_filename_component(_base_actual_header "${_actual_header}" NAME)
-        file(WRITE "${_arg_OUTPUT_DIR}/${_base_actual_header}" "#include \"${_actual_header}\"\n")
-
-        list(APPEND _required_headers "${_actual_header}")
+        # Include this header from the common header
+        list(APPEND _required_headers "${_actual_header_basename}")
 
         unset(_actual_header)
     endforeach()
@@ -91,16 +91,12 @@ function(_liri_internal_forward_headers destination_var)
         set(_common_header "${_arg_OUTPUT_DIR}/${_arg_MODULE_NAME}")
         file(WRITE "${_common_header}" "// This header includes all the header files of the \"${_arg_MODULE_NAME}\" module.\n\n")
         foreach(_header IN LISTS _required_headers)
-            get_filename_component(_header_basename "${_header}" NAME)
-            file(APPEND "${_common_header}" "#include \"${_header_basename}\"\n")
+            file(APPEND "${_common_header}" "#include <${_arg_MODULE_NAME}/${_header}>\n")
         endforeach()
         list(APPEND ${destination_var} "${_common_header}")
     endif()
 
     set(${destination_var} ${${destination_var}} PARENT_SCOPE)
-    if(_arg_REQUIRED_HEADERS)
-        set(${_arg_REQUIRED_HEADERS} ${${_arg_REQUIRED_HEADERS}} ${_required_headers} PARENT_SCOPE)
-    endif()
 endfunction()
 
 # This is the main entry function for creating a Liri module, that typically
@@ -114,18 +110,12 @@ function(liri_add_module name)
     # Find packages we need
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
 
-    # Include other functions and macros
-    include(CMakePackageConfigHelpers)
-    include(ECMGenerateHeaders)
-    include(GenerateExportHeader)
-    include(ECMGeneratePkgConfigFile)
-
     # Parse arguments
     cmake_parse_arguments(
         _arg
         "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
         "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME;QTQUICK_COMPILER"
-        "${__default_private_args};${__default_public_args};INSTALL_HEADERS;FORWARDING_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
+        "${__default_private_args};${__default_public_args};INSTALL_HEADERS;CLASS_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
     )
     if(DEFINED _arg_UNPARSED_ARGUMENTS)
@@ -142,14 +132,12 @@ function(liri_add_module name)
     endif()
 
     # Various ways to call this module
-    if(DEFINED _arg_MODULE_NAME)
+    if(_arg_MODULE_NAME)
         set(module "${_arg_MODULE_NAME}")
     else()
         set(module "Liri${name}")
     endif()
-    string(TOUPPER "${module}" module_upper)
-    string(TOLOWER "${module}" module_lower)
-    if(DEFINED _arg_VERSIONED_MODULE_NAME)
+    if(_arg_VERSIONED_MODULE_NAME)
         set(versioned_module_name "${_arg_VERSIONED_MODULE_NAME}")
     else()
         set(versioned_module_name "Liri${_module_version}${name}")
@@ -159,6 +147,7 @@ function(liri_add_module name)
     string(REGEX REPLACE "-" "_" name_upper "${name_upper}")
     string(TOLOWER "${name}" name_lower)
 
+    # Default description
     if(NOT _arg_DESCRIPTION)
         set(_arg_DESCRIPTION "${versioned_module_name} library")
     endif()
@@ -167,59 +156,43 @@ function(liri_add_module name)
 
     # Add target for the public API
     if(${_arg_STATIC})
-        add_library("${target}" STATIC)
+        add_library("${target}" STATIC ${_arg_SOURCES})
     else()
-        add_library("${target}" SHARED)
+        add_library("${target}" SHARED ${_arg_SOURCES})
     endif()
     add_library("Liri::${target}" ALIAS "${target}")
+    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "module")
 
-    # Add resources
-    if(DEFINED _arg_RESOURCES)
-        if(${_arg_QTQUICK_COMPILER})
-            find_package(Qt5QuickCompiler)
-            if(Qt5QuickCompiler_FOUND)
-                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
-                list(APPEND _arg_SOURCES ${_arg_RESOURCES})
-            else()
-                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
-                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
-            endif()
-        else()
-            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
-        endif()
-        list(APPEND _arg_SOURCES ${RESOURCES})
-    endif()
+    # Output file name and version
+    set_target_properties("${target}"
+        PROPERTIES
+            OUTPUT_NAME "${versioned_module_name}"
+            VERSION "${PROJECT_VERSION}"
+            SOVERSION "${_module_version}"
+    )
 
     # Add target for the private API
     set(target_private "${target}Private")
     add_library("${target_private}" INTERFACE)
     add_library("Liri::${target_private}" ALIAS "${target_private}")
 
-    if(NOT ${_arg_NO_MODULE_HEADERS})
-        set_target_properties("${target}" PROPERTIES MODULE_HAS_HEADERS ON)
-    else()
-        set_target_properties("${target}" PROPERTIES MODULE_HAS_HEADERS OFF)
-    endif()
-
-    set_target_properties("${target}" PROPERTIES OUTPUT_NAME "${versioned_module_name}")
-
     # Local include directory
-    set(parent_include_dir "${PROJECT_BINARY_DIR}/include")
-    set(include_dir "${parent_include_dir}/${module}")
+    set(_parent_include_dir "${PROJECT_BINARY_DIR}/include")
+    set(_include_dir "${_parent_include_dir}/${module}")
+    set(_private_include_dir "${_include_dir}/${PROJECT_VERSION}/${module}/private")
 
-    # Setup the public target
+    # Extend the target
     liri_extend_target("${target}"
-        SOURCES ${_arg_SOURCES}
         PUBLIC_INCLUDE_DIRECTORIES
-            "$<BUILD_INTERFACE:${parent_include_dir}>"
+            "$<BUILD_INTERFACE:${_parent_include_dir}>"
             "$<INSTALL_INTERFACE:include>"
             ${_arg_PUBLIC_INCLUDE_DIRECTORIES}
         INCLUDE_DIRECTORIES
             "${CMAKE_CURRENT_SOURCE_DIR}"
             "${CMAKE_CURRENT_BINARY_DIR}"
-            "$<BUILD_INTERFACE:${parent_include_dir}>"
-            "${include_dir}/${PROJECT_VERSION}"
-            "${include_dir}/${PROJECT_VERSION}/${module}"
+            "$<BUILD_INTERFACE:${_parent_include_dir}>"
+            "${_include_dir}/${PROJECT_VERSION}"
+            "${_include_dir}/${PROJECT_VERSION}/${module}"
             ${_arg_INCLUDE_DIRECTORIES}
         PUBLIC_DEFINES
             ${_arg_PUBLIC_DEFINES}
@@ -233,23 +206,52 @@ function(liri_add_module name)
             LIRI_BUILD_${name_upper}_LIB
         PUBLIC_LIBRARIES ${_arg_PUBLIC_LIBRARIES}
         LIBRARIES ${_arg_LIBRARIES}
+        RESOURCES ${_arg_RESOURCES}
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
         DBUS_INTERFACE_SOURCES ${_arg_DBUS_INTERFACE_SOURCES}
         DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
+        PRIVATE_HEADERS ${_arg_PRIVATE_HEADERS}
+        CLASS_HEADERS ${_arg_CLASS_HEADERS}
+        INSTALL_HEADERS ${_arg_INSTALL_HEADERS}
+        PKGCONFIG_DEPENDENCIES ${_arg_PKGCONFIG_DEPENDENCIES}
     )
 
-    set_target_properties("${target}"
-        PROPERTIES
-            VERSION "${PROJECT_VERSION}"
-            SOVERSION "${_module_version}"
+    # Set custom properties
+    set_target_properties("${target}" PROPERTIES LIRI_MODULE_DESCRIPTION "${_arg_DESCRIPTION}")
+    set_target_properties("${target}" PROPERTIES LIRI_MODULE_NAME "${module}")
+    set_target_properties("${target}" PROPERTIES LIRI_MODULE_VERSIONED_NAME "${versioned_module_name}")
+    if(NOT _arg_NO_MODULE_HEADERS)
+        set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_HEADERS ON)
+    else()
+        set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_HEADERS OFF)
+    endif()
+    set_target_properties("${target}" PROPERTIES
+        LIRI_MODULE_PARENT_INCLUDE_DIR "${_parent_include_dir}"
+        LIRI_MODULE_INCLUDE_DIR "${_include_dir}"
+        LIRI_MODULE_PRIVATE_INCLUDE_DIR "${_private_include_dir}"
     )
+    if(NOT _arg_NO_CMAKE)
+        set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_CMAKE ON)
+    else()
+        set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_CMAKE OFF)
+    endif()
+    if(NOT _arg_NO_PKGCONFIG)
+        set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_PKGCONFIG ON)
+    else()
+        set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_PKGCONFIG OFF)
+    endif()
+    if(_arg_QTQUICK_COMPILER)
+        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER ON)
+    else()
+        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER OFF)
+    endif()
 
     # Setup the private target
     target_include_directories("${target_private}" INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
-        "$<BUILD_INTERFACE:${include_dir}/${PROJECT_VERSION}>"
-        "$<BUILD_INTERFACE:${include_dir}/${PROJECT_VERSION}/${module}>"
+        "$<BUILD_INTERFACE:${_include_dir}/${PROJECT_VERSION}>"
+        "$<BUILD_INTERFACE:${_include_dir}/${PROJECT_VERSION}/${module}>"
         "$<INSTALL_INTERFACE:include/${module}/${PROJECT_VERSION}>"
         "$<INSTALL_INTERFACE:include/${module}/${PROJECT_VERSION}/${module}>"
         "$<INSTALL_INTERFACE:include/${module}/${PROJECT_VERSION}/${module}/private>"
@@ -264,171 +266,225 @@ function(liri_add_module name)
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         )
-    else()
-        # Automatically generate the list of private headers and/or forwarding headers
-        if(NOT DEFINED _arg_PRIVATE_HEADERS OR NOT DEFINED _arg_FORWARDING_HEADERS)
-            set(_private_headers)
-            set(_forwarding_headers)
-
-            foreach(_source_file IN LISTS _arg_SOURCES)
-                get_filename_component(directory "${_source_file}" DIRECTORY)
-                get_filename_component(filename "${_source_file}" NAME)
-                get_filename_component(basename "${_source_file}" NAME_WLE)
-                get_filename_component(ext "${_source_file}" EXT)
-
-                string(COMPARE EQUAL "${ext}" ".h" is_header)
-                string(REGEX MATCH "_p$" is_private "${basename}")
-
-                if(is_header)
-                    if(is_private AND NOT DEFINED _arg_PRIVATE_HEADERS)
-                        list(APPEND _private_headers "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/${filename}")
-                    endif()
-                    if(NOT is_private AND NOT DEFINED _arg_FORWARDING_HEADERS)
-                        if(NOT IS_ABSOLUTE)
-                            set(_source_file "${CMAKE_CURRENT_SOURCE_DIR}/${_source_file}")
-                        endif()
-                        execute_process(
-                            COMMAND ${_fwd_headers_exe} "${_source_file}"
-                            OUTPUT_VARIABLE _fwd_headers_out
-                            RESULT_VARIABLE _fwd_headers_ret
-                        )
-                        string(STRIP "${_fwd_headers_out}" _fwd_headers_out)
-                        if(NOT _fwd_headers_ret EQUAL 0)
-                            message(FATAL_ERROR "Failed to run liri-forward-headers, return code: ${_fwd_headers_ret}")
-                        endif()
-                        if(NOT _fwd_headers_out STREQUAL "")
-                            list(APPEND _forwarding_headers "${_fwd_headers_out}")
-                        endif()
-                    endif()
-                endif()
-            endforeach()
-
-            if(_private_headers)
-                set(_arg_PRIVATE_HEADERS "${_private_headers}")
-            endif()
-            if(_forwarding_headers)
-                set(_arg_FORWARDING_HEADERS "${_forwarding_headers}")
-            endif()
-        endif()
-
-        if(DEFINED _arg_FORWARDING_HEADERS)
-            # Public headers and forward headers
-            _liri_internal_forward_headers(
-                ${target}_FORWARDING_HEADERS
-                OUTPUT_DIR "${include_dir}"
-                HEADER_NAMES ${_arg_FORWARDING_HEADERS}
-                REQUIRED_HEADERS ${target}_REQUIRED_HEADERS
-                MODULE_NAME "${module}"
-            )
-        endif()
-
-        # Version header
-        configure_file(
-            "${_LIRI_VERSION_HEADER_TEMPLATE}"
-            "${include_dir}/${module_lower}version.h"
-            @ONLY
-        )
-
-        # Forward export header
-        generate_export_header("${target}"
-            BASE_NAME "${module_lower}"
-            EXPORT_FILE_NAME "${include_dir}/${module_lower}global.h")
-
-        # Forward headers to install
-        if(DEFINED _arg_INSTALL_HEADERS)
-            foreach(_header_filename ${_arg_INSTALL_HEADERS})
-                get_filename_component(_base_header_filename "${_header_filename}" NAME)
-                set(_fwd_header_filename "${include_dir}/${_base_header_filename}")
-                file(WRITE "${_fwd_header_filename}" "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}\"")
-            endforeach()
-        endif()
-
-        # Forward private headers
-        if(DEFINED _arg_PRIVATE_HEADERS)
-            # Generate
-            foreach(_header_filename ${_arg_PRIVATE_HEADERS})
-                if(NOT IS_ABSOLUTE "${_header_filename}")
-                    set(_header_filename "${CMAKE_CURRENT_SOURCE_DIR}/${_header_filename}")
-                endif()
-                get_filename_component(_base_header_filename "${_header_filename}" NAME)
-                set(_fwd_header_filename "${include_dir}/${PROJECT_VERSION}/${module}/private/${_base_header_filename}")
-                file(WRITE "${_fwd_header_filename}" "#include \"${_header_filename}\"")
-            endforeach()
-
-            # Install
-            install(FILES ${_arg_PRIVATE_HEADERS}
-                    DESTINATION "${INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
-                    COMPONENT Devel)
-        endif()
-
-        # Install public headers
-        install(
-            FILES
-                ${_arg_INSTALL_HEADERS}
-                ${${target}_FORWARDING_HEADERS}
-                ${${target}_REQUIRED_HEADERS}
-                "${include_dir}/${module_lower}version.h"
-                "${include_dir}/${module_lower}global.h"
-            DESTINATION
-                "${INSTALL_INCLUDEDIR}/${module}"
-            COMPONENT
-                Devel
-        )
     endif()
 
     # Install CMake target
-    install(
-        TARGETS "${target}" "${target_private}"
-        EXPORT "${versioned_module_name}Targets"
-        LIBRARY DESTINATION "${INSTALL_LIBDIR}"
-        ARCHIVE DESTINATION "${INSTALL_LIBDIR}"
-        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}"
-        PRIVATE_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
-    )
-
-    ## CMake package generation:
-    if(NOT ${_arg_NO_CMAKE})
-        set(config_install_dir "${INSTALL_LIBDIR}/cmake/${versioned_module_name}")
+    if(NOT _arg_NO_CMAKE)
         install(
+            TARGETS "${target}" "${target_private}"
             EXPORT "${versioned_module_name}Targets"
+            LIBRARY DESTINATION "${INSTALL_LIBDIR}"
+            ARCHIVE DESTINATION "${INSTALL_LIBDIR}"
+            PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}"
+            PRIVATE_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
+        )
+    endif()
+endfunction()
+
+function(liri_finalize_module target)
+    if(NOT TARGET "${target}")
+        message(FATAL_ERROR "Trying to extend non-existing target \"${target}\".")
+    endif()
+
+    get_target_property(_name "${target}" LIRI_MODULE_NAME)
+    string(TOLOWER "${_name}" _name_lower)
+    string(TOUPPER "${_name}" _name_upper)
+    get_target_property(_versioned_name "${target}" LIRI_MODULE_VERSIONED_NAME)
+    get_target_property(_description "${target}" LIRI_MODULE_DESCRIPTION)
+    get_target_property(_has_headers "${target}" LIRI_MODULE_HAS_HEADERS)
+    get_target_property(_has_cmake "${target}" LIRI_MODULE_HAS_CMAKE)
+    get_target_property(_has_pkgconfig "${target}" LIRI_MODULE_HAS_PKGCONFIG)
+    get_target_property(_source_files "${target}" SOURCES)
+    get_target_property(_libraries "${target}" LIBRARIES)
+    get_target_property(_include_dir "${target}" LIRI_MODULE_INCLUDE_DIR)
+    get_target_property(_private_include_dir "${target}" LIRI_MODULE_PRIVATE_INCLUDE_DIR)
+
+    include(CMakePackageConfigHelpers)
+    include(ECMGenerateHeaders)
+    include(GenerateExportHeader)
+    include(ECMGeneratePkgConfigFile)
+
+    # Common target setup code
+    liri_finalize_target("${target}")
+
+    # Module headers
+    if(_has_headers)
+        get_target_property(_module_install_headers "${target}" LIRI_MODULE_INSTALL_HEADERS)
+        get_target_property(_module_private_headers "${target}" LIRI_MODULE_PRIVATE_HEADERS)
+        get_target_property(_module_classname_headers "${target}" LIRI_MODULE_CLASS_HEADERS)
+
+        # Prepare the list of headers to forward
+        if(_module_install_headers MATCHES "NOTFOUND")
+            set(_install_headers "")
+        else()
+            set(_install_headers "${_module_install_headers}")
+        endif()
+        if(_module_private_headers MATCHES "NOTFOUND")
+            set(_private_headers "")
+        else()
+            set(_private_headers "${_module_private_headers}")
+        endif()
+        if(_module_classname_headers MATCHES "NOTFOUND")
+            set(_classname_headers "")
+        else()
+            set(_classname_headers "${_module_classname_headers}")
+        endif()
+        foreach(_source_file IN LISTS _source_files)
+            get_filename_component(_basename "${_source_file}" NAME_WLE)
+            get_filename_component(_ext "${_source_file}" EXT)
+            get_property(_liri_private_header SOURCE "${_source_file}" PROPERTY LIRI_PRIVATE_HEADER SET)
+
+            if("${_ext}" STREQUAL ".h")
+                set(_is_header ON)
+            else()
+                set(_is_header OFF)
+            endif()
+
+            if(_liri_private_header OR "${_basename}" MATCHES "_p$")
+                set(_is_private ON)
+            else()
+                set(_is_private OFF)
+            endif()
+
+            if(_is_header)
+                # Public headers
+                if(NOT _is_private AND NOT _module_install_headers)
+                    list(APPEND _install_headers "${_source_file}")
+                endif()
+
+                # Private headers
+                if(_is_private AND NOT _module_private_headers)
+                    list(APPEND _private_headers "${_source_file}")
+                endif()
+
+                # Class-name headers
+                if(NOT _is_private)
+                    execute_process(
+                        COMMAND ${_fwd_headers_exe} "${_source_file}"
+                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                        OUTPUT_VARIABLE _fwd_headers_out
+                        RESULT_VARIABLE _fwd_headers_ret
+                     )
+                     string(STRIP "${_fwd_headers_out}" _fwd_headers_out)
+                     if(NOT _fwd_headers_ret EQUAL 0)
+                         message(FATAL_ERROR "Failed to run liri-forward-headers, return code: ${_fwd_headers_ret}")
+                     endif()
+                     if(NOT _fwd_headers_out STREQUAL "")
+                         list(APPEND _classname_headers "${_fwd_headers_out}")
+                     endif()
+                endif()
+            endif()
+        endforeach()
+
+        # Forward private headers
+        foreach(_private_header IN LISTS _private_headers)
+            get_filename_component(_filename "${_private_header}" NAME)
+
+            if(NOT IS_ABSOLUTE "${_private_header}")
+                set(_private_header "${CMAKE_CURRENT_SOURCE_DIR}/${_private_header}")
+            endif()
+            file(WRITE "${_private_include_dir}/${_filename}" "#include \"${_private_header}\"\n")
+            install(FILES "${_private_header}"
+                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}/${PROJECT_VERSION}/${_name}/private"
+                    COMPONENT Devel)
+        endforeach()
+
+        # Forward public headers
+        foreach(_install_header IN LISTS _install_headers)
+            get_filename_component(_filename "${_install_header}" NAME)
+
+            if(NOT IS_ABSOLUTE "${_install_header}")
+                set(_install_header "${CMAKE_CURRENT_SOURCE_DIR}/${_install_header}")
+            endif()
+            file(WRITE "${_include_dir}/${_filename}" "#include \"${_install_header}\"\n")
+            install(FILES "${_install_header}"
+                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                    COMPONENT Devel)
+        endforeach()
+
+        if(_classname_headers)
+            # Public headers and forward headers
+            _liri_internal_forward_headers(
+                ${target}_CLASS_HEADERS
+                OUTPUT_DIR "${_include_dir}"
+                HEADER_NAMES ${_classname_headers}
+                MODULE_NAME "${_name}"
+            )
+            install(FILES ${${target}_CLASS_HEADERS}
+                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                    COMPONENT Devel)
+        endif()
+
+        # Version header
+        set(_version_header "${_include_dir}/${_name_lower}version.h")
+        configure_file(
+            "${_LIRI_VERSION_HEADER_TEMPLATE}"
+            "${_version_header}"
+            @ONLY
+        )
+        set_source_files_properties("${_version_header}" GENERATED)
+        target_sources("${target}" PRIVATE "${_version_header}")
+        install(FILES "${_version_header}"
+                DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                COMPONENT Devel)
+
+        # Generate export header
+        set(_global_header "${_include_dir}/${_name_lower}global.h")
+        generate_export_header("${target}"
+            BASE_NAME "${_name_lower}"
+            EXPORT_FILE_NAME "${_global_header}")
+        set_source_files_properties("${_global_header}" GENERATED)
+        target_sources("${target}" PRIVATE "${_global_header}")
+        install(FILES "${_global_header}"
+                DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                COMPONENT Devel)
+    endif()
+
+    # CMake package generation
+    if(_has_cmake)
+        set(_config_install_dir "${INSTALL_LIBDIR}/cmake/${_versioned_name}")
+
+        install(
+            EXPORT "${_versioned_name}Targets"
             NAMESPACE Liri::
-            DESTINATION ${config_install_dir}
+            DESTINATION ${_config_install_dir}
         )
 
         configure_package_config_file(
             "${_LIRI_MODULE_CONFIG_TEMPLATE}"
-            "${CMAKE_CURRENT_BINARY_DIR}/${versioned_module_name}Config.cmake"
-            INSTALL_DESTINATION "${config_install_dir}"
+            "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Config.cmake"
+            INSTALL_DESTINATION "${_config_install_dir}"
         )
         write_basic_package_version_file(
-            ${CMAKE_CURRENT_BINARY_DIR}/${versioned_module_name}ConfigVersion.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}ConfigVersion.cmake
             VERSION ${PROJECT_VERSION}
             COMPATIBILITY AnyNewerVersion
         )
 
-        set(extra_cmake_files)
-        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${versioned_module_name}Macros.cmake")
-            list(APPEND extra_cmake_files "${CMAKE_CURRENT_LIST_DIR}/${versioned_module_name}Macros.cmake")
+        set(_extra_cmake_files)
+        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Macros.cmake")
+            list(APPEND _extra_cmake_files "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Macros.cmake")
         endif()
 
         install(FILES
-            "${CMAKE_CURRENT_BINARY_DIR}/${versioned_module_name}Config.cmake"
-            "${CMAKE_CURRENT_BINARY_DIR}/${versioned_module_name}ConfigVersion.cmake"
-            ${extra_cmake_files}
-            DESTINATION "${config_install_dir}"
+            "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}ConfigVersion.cmake"
+            ${_extra_cmake_files}
+            DESTINATION "${_config_install_dir}"
             COMPONENT Devel
         )
     endif()
 
     # Generate pkg-config file
-    if(NOT ${_arg_NO_PKGCONFIG})
-        get_target_property(_pkgconfig_public_defines "${target}" "PUBLIC_DEFINES")
+    if(_has_pkgconfig)
+        get_target_property(_defines "${target}" PUBLIC_DEFINES)
+        get_target_property(_deps "${target}" LIRI_MODULE_PKGCONFIG_DEPENDENCIES)
 
         ecm_generate_pkgconfig_file(
-            BASE_NAME "${versioned_module_name}"
-            DESCRIPTION ${_arg_DESCRIPTION}
-            DEFINES ${_pkgconfig_public_defines}
-            DEPS ${_arg_PKGCONFIG_DEPENDENCIES}
+            BASE_NAME "${_versioned_name}"
+            DESCRIPTION "${_description}"
+            DEFINES ${_defines}
+            DEPS ${_deps}
             FILENAME_VAR _pkgconfig_filename
             INCLUDE_INSTALL_DIR "${INSTALL_INCLUDEDIR}"
             LIB_INSTALL_DIR "${INSTALL_LIBDIR}"
