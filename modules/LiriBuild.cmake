@@ -107,28 +107,81 @@ function(liri_extend_target target)
         _arg
         ""
         "EXPORT_IMPORT_CONDITION"
-	"CONDITION;${__default_public_args};${__default_private_args};COMPILE_FLAGS;OUTPUT_NAME"
+        "CONDITION;${__default_public_args};${__default_private_args};COMPILE_FLAGS;OUTPUT_NAME"
         ${ARGN}
     )
     if(DEFINED _arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "Unknown arguments were passed to liri_extend_target (${_arg_UNPARSED_ARGUMENTS}).")
     endif()
 
-    if("x${_arg_CONDITION}" STREQUAL "x")
-        set(_arg_CONDITION ON)
+    # If CONDITION is not specified, we apply all properties requested by the user
+    if(DEFINED _arg_CONDITION)
+        if(_arg_CONDITION)
+            set(_condition ON)
+        else()
+            set(_condition OFF)
+        endif()
+    else()
+        set(_condition ON)
     endif()
 
-    if(${_arg_CONDITION})
-        set(dbus_sources "")
-        foreach(adaptor ${_arg_DBUS_ADAPTOR_SOURCES})
-            _qdbusxml2cpp_command("${target}" "${adaptor}" ADAPTOR FLAGS "${_arg_DBUS_ADAPTOR_FLAGS}")
-            list(APPEND dbus_sources "${sources}")
-        endforeach()
-        foreach(interface ${_arg_DBUS_INTERFACE_SOURCES})
-            _qdbusxml2cpp_command("${target}" "${interface}" INTERFACE FLAGS "${_arg_DBUS_INTERFACE_FLAGS}")
-            list(APPEND dbus_sources "${sources}")
-        endforeach()
+    if(_condition)
+        if(DEFINED _arg_SOURCES)
+            target_sources("${target}" PRIVATE ${_arg_SOURCES})
+        endif()
+
+        if(DEFINED _arg_EXPORT_IMPORT_CONDITION)
+            set_target_properties("${target}" PROPERTIES DEFINE_SYMBOL "${_arg_EXPORT_IMPORT_CONDITION}")
+        endif()
+
+        if(DEFINED _arg_COMPILE_FLAGS)
+            target_compile_options("${target}" PUBLIC "${_arg_COMPILE_FLAGS}")
+        endif()
+
+        if(DEFINED _arg_OUTPUT_NAME)
+            set_target_properties("${target}" PROPERTIES OUTPUT_NAME "${_arg_OUTPUT_NAME}")
+        endif()
+
+        if(DEFINED _arg_PUBLIC_LIBRARIES)
+            target_link_libraries("${target}" PUBLIC ${_arg_PUBLIC_LIBRARIES})
+        endif()
+        if(DEFINED _arg_LIBRARIES)
+            target_link_libraries("${target}" PRIVATE ${_arg_LIBRARIES})
+        endif()
+
+        if(DEFINED _arg_PUBLIC_INCLUDE_DIRECTORIES)
+            target_include_directories("${target}" PUBLIC ${_arg_PUBLIC_INCLUDE_DIRECTORIES})
+        endif()
+        if(DEFINED _arg_INCLUDE_DIRECTORIES)
+            target_include_directories("${target}" PRIVATE ${_arg_INCLUDE_DIRECTORIES})
+        endif()
+
+        if(DEFINED _arg_PUBLIC_DEFINES)
+            target_compile_definitions("${target}" PUBLIC ${_arg_PUBLIC_DEFINES})
+        endif()
+        if(DEFINED _arg_DEFINES)
+            target_compile_definitions("${target}" PRIVATE ${_arg_DEFINES})
+        endif()
+
         if(_arg_DBUS_ADAPTOR_SOURCES OR _arg_DBUS_INTERFACE_SOURCES)
+            set(_dbus_sources "")
+
+            # Add D-Bus adaptor sources
+            foreach(adaptor IN LISTS _arg_DBUS_ADAPTOR_SOURCES)
+                _qdbusxml2cpp_command("${target}" "${adaptor}" ADAPTOR FLAGS "${_arg_DBUS_ADAPTOR_FLAGS}")
+                list(APPEND _dbus_sources "${sources}")
+            endforeach()
+
+            # Add D-Bus interface sources
+            foreach(interface IN LISTS _arg_DBUS_INTERFACE_SOURCES)
+                _qdbusxml2cpp_command("${target}" "${interface}" INTERFACE FLAGS "${_arg_DBUS_INTERFACE_FLAGS}")
+                list(APPEND _dbus_sources "${sources}")
+            endforeach()
+
+            if(_dbus_sources)
+                target_sources("${target}" PRIVATE ${_dbus_sources})
+            endif()
+
             # This implicitely requires Qt5::DBus
             list(FIND _arg_LIBRARIES "Qt5::DBus" _qt5_dbus_index)
             if(${_qt5_dbus_index} EQUAL -1)
@@ -137,17 +190,6 @@ function(liri_extend_target target)
                 list(APPEND _arg_LIBRARIES "Qt5::DBus")
             endif()
         endif()
-
-        target_sources("${target}" PRIVATE ${_arg_SOURCES} ${dbus_sources})
-        if(DEFINED _arg_EXPORT_IMPORT_CONDITION)
-            set_target_properties("${target}" PROPERTIES DEFINE_SYMBOL "${_arg_EXPORT_IMPORT_CONDITION}")
-        endif()
-        target_include_directories("${target}" PUBLIC ${_arg_PUBLIC_INCLUDE_DIRECTORIES} PRIVATE ${_arg_INCLUDE_DIRECTORIES})
-        target_compile_definitions("${target}" PUBLIC ${_arg_PUBLIC_DEFINES} PRIVATE ${_arg_DEFINES})
-        if(DEFINED _arg_COMPILE_FLAGS)
-            target_compile_options("${target}" PUBLIC "${_arg_COMPILE_FLAGS}")
-        endif()
-        target_link_libraries("${target}" PUBLIC ${_arg_PUBLIC_LIBRARIES} PRIVATE ${_arg_LIBRARIES})
     endif()
 endfunction()
 
