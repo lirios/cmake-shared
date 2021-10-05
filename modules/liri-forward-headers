@@ -29,6 +29,18 @@ def prepare(filename: str):
             # Remove C++ comments
             line = re.sub(r'//.*$', '', line)
 
+            # Put ';' after directives
+            if re.match(r'^#if', line):
+                line += ';'
+            if re.match(r'^#else', line):
+                line += ';'
+            if re.match(r'^#elif', line):
+                line += ';'
+            if re.match(r'^#include', line):
+                line += ';'
+            if re.match(r'^#define.*[\r\n]*$', line):
+                line += ';'
+
             # Put ';' after every Qt macro we know of
             if re.match(r'^Q_[A-Z_0-9]*\(.*\)[\r\n]*$', line):
                 line += ';'
@@ -39,6 +51,10 @@ def prepare(filename: str):
             if re.match(r'QT_MODULE\(.*\)[\r\n]*$', line):
                 line += ';'
             if re.match(r'^QT_WARNING_(PUSH|POP|DISABLE_\w+\(.*\))[\r\n]*$', line):
+                line += ';'
+            if re.match(r'^QT_FORWARD_DECLARE_CLASS\(.*\)[\r\n]*$', line):
+                line += ';'
+            if re.match(r'^QT_DECLARE_INTERFACE\(.*\)[\r\n]*$', line):
                 line += ';'
 
             # Append line (without line ending) to the parsable string

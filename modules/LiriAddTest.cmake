@@ -25,7 +25,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-function(liri_add_test name)
+function(liri_add_test target)
     # Find packages we need
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core Test)
 
@@ -59,7 +59,7 @@ function(liri_add_test name)
     endif()
 
     # Target
-    liri_add_executable("${name}"
+    liri_add_executable("${target}"
         SOURCES ${_arg_SOURCES}
         OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         INCLUDE_DIRECTORIES
@@ -74,13 +74,14 @@ function(liri_add_test name)
         DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
         NO_TARGET_INSTALLATION
     )
+    liri_finalize_executable("${target}")
     add_test(
-        NAME "${name}"
-        COMMAND "${name}"
+        NAME "${target}"
+        COMMAND "${target}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     )
-    set_tests_properties("${name}" PROPERTIES RUN_SERIAL ${_arg_RUN_SERIAL})
-    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "PATH=${_bindir}${LIRI_PATH_SEPARATOR}$ENV{PATH}")
-    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "QT_PLUGIN_PATH=${_pluginsdir}${LIRI_PATH_SEPARATOR}$ENV{QT_PLUGIN_PATH}")
-    set_property(TEST "${name}" APPEND PROPERTY ENVIRONMENT "QML2_IMPORT_PATH=${_qmldir}${LIRI_PATH_SEPARATOR}$ENV{QML2_IMPORT_PATH}")
+    set_tests_properties("${target}" PROPERTIES RUN_SERIAL ${_arg_RUN_SERIAL})
+    set_property(TEST "${target}" APPEND PROPERTY ENVIRONMENT "PATH=${_bindir}${LIRI_PATH_SEPARATOR}$ENV{PATH}")
+    set_property(TEST "${target}" APPEND PROPERTY ENVIRONMENT "QT_PLUGIN_PATH=${_pluginsdir}${LIRI_PATH_SEPARATOR}$ENV{QT_PLUGIN_PATH}")
+    set_property(TEST "${target}" APPEND PROPERTY ENVIRONMENT "QML2_IMPORT_PATH=${_qmldir}${LIRI_PATH_SEPARATOR}$ENV{QML2_IMPORT_PATH}")
 endfunction()

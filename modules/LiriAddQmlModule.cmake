@@ -49,6 +49,7 @@ function(liri_add_qml_module name)
     # Target
     set(target "${name}plugin")
     add_custom_target("${target}" SOURCES ${_arg_QML_FILES})
+    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "qmlmodule")
 
     # Find qmlplugindump
     get_target_property(QMake_EXECUTABLE Qt5::qmake LOCATION)

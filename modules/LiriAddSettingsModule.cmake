@@ -66,6 +66,7 @@ function(liri_add_settings_module name)
     # Target
     set(target "${name}Settings")
     add_custom_target("${target}" ALL SOURCES ${_sources})
+    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "settings")
 
     # Install
     install(

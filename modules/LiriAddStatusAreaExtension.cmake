@@ -71,6 +71,7 @@ function(liri_add_statusareaextension name)
     # Target
     set(target "${name}StatusAreaExtension")
     add_custom_target("${target}" ALL SOURCES ${_sources})
+    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "statusarea")
 
     # Install
     install(

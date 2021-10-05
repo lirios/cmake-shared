@@ -85,25 +85,11 @@ function(liri_add_qml_plugin name)
 
     # Target
     if(_arg_STATIC)
-        add_library("${target}" STATIC)
+        add_library("${target}" STATIC ${_arg_SOURCES} ${_arg_QML_FILES})
     else()
-        add_library("${target}" SHARED)
+        add_library("${target}" SHARED ${_arg_SOURCES} ${_arg_QML_FILES})
     endif()
-    if(DEFINED _arg_RESOURCES)
-        if(${_arg_QTQUICK_COMPILER})
-            find_package(Qt5QuickCompiler)
-            if(Qt5QuickCompiler_FOUND)
-                qtquick_compiler_add_resources(RESOURCES ${_arg_RESOURCES})
-                list(APPEND _arg_SOURCES ${_arg_RESOURCES})
-            else()
-                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
-                qt5_add_resources(RESOURCES ${_arg_RESOURCES})
-            endif()
-        else()
-            qt5_add_resources(RESOURCES ${_arg_RESOURCES})
-        endif()
-        list(APPEND _arg_SOURCES ${RESOURCES})
-    endif()
+    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "qmlplugin")
 
     set(_static_defines "")
     if (_arg_STATIC)
@@ -111,9 +97,6 @@ function(liri_add_qml_plugin name)
     endif()
 
     liri_extend_target("${target}"
-        SOURCES
-            ${_arg_SOURCES}
-            ${_arg_QML_FILES}
         INCLUDE_DIRECTORIES
             "${CMAKE_CURRENT_SOURCE_DIR}"
             "${CMAKE_CURRENT_BINARY_DIR}"
@@ -133,11 +116,19 @@ function(liri_add_qml_plugin name)
 	    QT_PLUGIN
         EXPORT_IMPORT_CONDITION
             LIRI_BUILD_${name_upper}_LIB
+        RESOURCES ${_arg_RESOURCES}
         DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
         DBUS_INTERFACE_SOURCES ${_arg_DBUS_INTERFACE_SOURCES}
         DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
     )
+
+    # Set custom properties
+    if(_arg_QTQUICK_COMPILER)
+        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER ON)
+    else()
+        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER OFF)
+    endif()
 
     # Install
     install(FILES ${_arg_QML_FILES}
@@ -148,4 +139,11 @@ function(liri_add_qml_plugin name)
     if(NOT _arg_STATIC)
         install(TARGETS "${target}" DESTINATION "${INSTALL_QMLDIR}/${_arg_MODULE_PATH}")
     endif()
+endfunction()
+
+function(liri_finalize_qml_plugin name)
+    # This function right now is just an alias to liri_finalize_target()
+    # for consistency with the liri_finalize_<target type> convention
+    set(target "${name}plugin")
+    liri_finalize_target("${target}")
 endfunction()
