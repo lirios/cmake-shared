@@ -1,3 +1,6 @@
+# Minimum CMake version required
+cmake_minimum_required(VERSION 3.20.0)
+
 if(LIRI_LOCAL_ECM)
     ## Add some paths to check for CMake modules:
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/modules")
