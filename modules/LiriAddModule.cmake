@@ -25,7 +25,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/liri-forward-headers")
+set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/detect-class-headers")
 
 function(_liri_internal_forward_headers destination_var)
     set(options)
@@ -360,14 +360,14 @@ function(liri_finalize_module target)
                 # Class-name headers
                 if(NOT _is_private)
                     execute_process(
-                        COMMAND ${_fwd_headers_exe} "${_source_file}"
+                        COMMAND python3 ${_fwd_headers_exe} "${_source_file}"
                         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                         OUTPUT_VARIABLE _fwd_headers_out
                         RESULT_VARIABLE _fwd_headers_ret
                      )
                      string(STRIP "${_fwd_headers_out}" _fwd_headers_out)
                      if(NOT _fwd_headers_ret EQUAL 0)
-                         message(FATAL_ERROR "Failed to run liri-forward-headers, return code: ${_fwd_headers_ret}")
+                         message(FATAL_ERROR "Failed to run detect-class-headers, return code: ${_fwd_headers_ret}")
                      endif()
                      if(NOT _fwd_headers_out STREQUAL "")
                          list(APPEND _classname_headers "${_fwd_headers_out}")
