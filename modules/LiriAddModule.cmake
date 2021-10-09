@@ -358,6 +358,9 @@ function(liri_finalize_module target)
                 endif()
 
                 # Class-name headers
+                if(NOT IS_ABSOLUTE "${_source_file}")
+                    set(_source_file "${CMAKE_CURRENT_SOURCE_DIR}/${_source_file}")
+                endif()
                 if(NOT _is_private AND EXISTS "${_source_file}")
                     execute_process(
                         COMMAND python3 ${_fwd_headers_exe} "${_source_file}"
