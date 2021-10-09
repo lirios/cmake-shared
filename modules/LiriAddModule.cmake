@@ -138,9 +138,9 @@ function(liri_add_module name)
         set(module "Liri${name}")
     endif()
     if(_arg_VERSIONED_MODULE_NAME)
-        set(versioned_module_name "${_arg_VERSIONED_MODULE_NAME}")
+        set(_versioned_name "${_arg_VERSIONED_MODULE_NAME}")
     else()
-        set(versioned_module_name "Liri${_module_version}${name}")
+        set(_versioned_name "Liri${_module_version}${name}")
     endif()
     set(target "${name}")
     string(TOUPPER "${name}" name_upper)
@@ -149,7 +149,7 @@ function(liri_add_module name)
 
     # Default description
     if(NOT _arg_DESCRIPTION)
-        set(_arg_DESCRIPTION "${versioned_module_name} library")
+        set(_arg_DESCRIPTION "${_versioned_name} library")
     endif()
 
     ## Target:
@@ -166,7 +166,7 @@ function(liri_add_module name)
     # Output file name and version
     set_target_properties("${target}"
         PROPERTIES
-            OUTPUT_NAME "${versioned_module_name}"
+            OUTPUT_NAME "${_versioned_name}"
             VERSION "${PROJECT_VERSION}"
             SOVERSION "${_module_version}"
     )
@@ -220,7 +220,7 @@ function(liri_add_module name)
     # Set custom properties
     set_target_properties("${target}" PROPERTIES LIRI_MODULE_DESCRIPTION "${_arg_DESCRIPTION}")
     set_target_properties("${target}" PROPERTIES LIRI_MODULE_NAME "${module}")
-    set_target_properties("${target}" PROPERTIES LIRI_MODULE_VERSIONED_NAME "${versioned_module_name}")
+    set_target_properties("${target}" PROPERTIES LIRI_MODULE_VERSIONED_NAME "${_versioned_name}")
     if(NOT _arg_NO_MODULE_HEADERS)
         set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_HEADERS ON)
     else()
@@ -272,7 +272,7 @@ function(liri_add_module name)
     if(NOT _arg_NO_CMAKE)
         install(
             TARGETS "${target}" "${target_private}"
-            EXPORT "${versioned_module_name}Targets"
+            EXPORT "${_versioned_name}Targets"
             LIBRARY DESTINATION "${INSTALL_LIBDIR}"
             ARCHIVE DESTINATION "${INSTALL_LIBDIR}"
             PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}"
