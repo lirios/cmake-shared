@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10.0)
 
 project("CMakeShared"
-    VERSION "1.1.0"
+    VERSION "2.0.0"
     DESCRIPTION "Common CMake rules"
 )
 
