@@ -1,5 +1,5 @@
 # Minimum CMake version required
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.17.0)
 
 if(LIRI_LOCAL_ECM)
     ## Add some paths to check for CMake modules:
