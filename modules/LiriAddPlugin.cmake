@@ -32,8 +32,8 @@ function(liri_add_plugin target)
     # Parse arguments
     cmake_parse_arguments(
         _arg
-	"STATIC"
-        "TYPE;OUTPUT_NAME;QTQUICK_COMPILER"
+        "QTQUICK_COMPILER;STATIC"
+        "TYPE;OUTPUT_NAME"
         "${__default_private_args};${__default_public_args}"
         ${ARGN}
     )

@@ -43,8 +43,8 @@ function(liri_add_module name)
     # Parse arguments
     cmake_parse_arguments(
         _arg
-        "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
-        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME;QTQUICK_COMPILER"
+        "QTQUICK_COMPILER;NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
+        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;CLASS_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
     )

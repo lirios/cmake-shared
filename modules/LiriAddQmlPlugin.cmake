@@ -32,8 +32,8 @@ function(liri_add_qml_plugin target)
     # Parse arguments
     cmake_parse_arguments(
         _arg
-	"STATIC"
-        "OUTPUT_NAME;MODULE_PATH;VERSION;QTQUICK_COMPILER"
+        "QTQUICK_COMPILER;STATIC"
+        "OUTPUT_NAME;MODULE_PATH;VERSION"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
     )
