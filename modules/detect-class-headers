@@ -38,7 +38,7 @@ def prepare(filename: str):
                 line += ';'
             if re.match(r'^#include', line):
                 line += ';'
-            if re.match(r'^#define.*[\r\n]*$', line):
+            if re.match(r'^#define.*[^\\]\s*$', line):
                 line += ';'
 
             # Put ';' after every Qt macro we know of
