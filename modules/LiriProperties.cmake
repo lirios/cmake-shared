@@ -73,6 +73,15 @@ define_property(TARGET
 
 define_property(TARGET
     PROPERTY
+        LIRI_MODULE_GLOBAL_HEADER_CONTENT
+    BRIEF_DOCS
+        "Specifies additional content for the global header of a Liri module."
+    FULL_DOCS
+        "This is a property on modules."
+)
+
+define_property(TARGET
+    PROPERTY
         LIRI_MODULE_HAS_CMAKE
     BRIEF_DOCS
         "Specifies whether CMake files will be generated for the Liri module."

@@ -137,7 +137,7 @@ function(liri_extend_target target)
     cmake_parse_arguments(
         _arg
         ""
-        "EXPORT_IMPORT_CONDITION"
+        "EXPORT_IMPORT_CONDITION;GLOBAL_HEADER_CONTENT"
         "CONDITION;${__default_public_args};${__default_private_args};${__default_module_args};COMPILE_FLAGS;OUTPUT_NAME"
         ${ARGN}
     )
@@ -205,6 +205,7 @@ function(liri_extend_target target)
 
         # Custom properties only for Liri modules
         if(_target_type STREQUAL "module")
+            set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_GLOBAL_HEADER_CONTENT "${_arg_GLOBAL_HEADER_CONTENT}")
             set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_PKGCONFIG_DEPENDENCIES "${_arg_PKGCONFIG_DEPENDENCIES}")
             set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_PRIVATE_HEADERS "${_arg_PRIVATE_HEADERS}")
             set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_CLASS_HEADERS "${_arg_CLASS_HEADERS}")

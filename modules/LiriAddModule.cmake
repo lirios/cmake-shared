@@ -44,7 +44,7 @@ function(liri_add_module name)
     cmake_parse_arguments(
         _arg
         "QTQUICK_COMPILER;NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
-        "DESCRIPTION;MODULE_NAME;VERSIONED_MODULE_NAME"
+        "DESCRIPTION;MODULE_NAME;GLOBAL_HEADER_CONTENT;VERSIONED_MODULE_NAME"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;CLASS_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
     )
@@ -141,6 +141,7 @@ function(liri_add_module name)
         DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
         DBUS_INTERFACE_SOURCES ${_arg_DBUS_INTERFACE_SOURCES}
         DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
+        GLOBAL_HEADER_CONTENT ${_arg_GLOBAL_HEADER_CONTENT}
         PRIVATE_HEADERS ${_arg_PRIVATE_HEADERS}
         CLASS_HEADERS ${_arg_CLASS_HEADERS}
         INSTALL_HEADERS ${_arg_INSTALL_HEADERS}
@@ -219,6 +220,7 @@ function(liri_finalize_module target)
     get_target_property(_name "${target}" LIRI_MODULE_NAME)
     string(TOLOWER "${_name}" _name_lower)
     string(TOUPPER "${_name}" _name_upper)
+    get_target_property(_target_version "${target}" VERSION)
     get_target_property(_versioned_name "${target}" LIRI_MODULE_VERSIONED_NAME)
     get_target_property(_description "${target}" LIRI_MODULE_DESCRIPTION)
     get_target_property(_has_headers "${target}" LIRI_MODULE_HAS_HEADERS)
@@ -231,7 +233,7 @@ function(liri_finalize_module target)
 
     include(CMakePackageConfigHelpers)
     include(ECMGenerateHeaders)
-    include(GenerateExportHeader)
+    include(ECMGenerateExportHeader)
     include(ECMGeneratePkgConfigFile)
 
     # Common target setup code
@@ -318,7 +320,7 @@ function(liri_finalize_module target)
             endif()
             file(GENERATE OUTPUT "${_private_include_dir}/${_filename}" CONTENT "#include \"${_private_header}\"\n" TARGET "${target}")
             install(FILES "${_private_header}"
-                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}/${PROJECT_VERSION}/${_name}/private"
+                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}/${_target_version}/${_name}/private"
                     COMPONENT Devel)
         endforeach()
 
@@ -361,11 +363,20 @@ function(liri_finalize_module target)
                 DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
                 COMPONENT Devel)
 
-        # Generate export header
+        # Generate global header
         set(_global_header "${_include_dir}/${_name_lower}global.h")
-        generate_export_header("${target}"
+        get_target_property(_global_header_content "${target}" LIRI_MODULE_GLOBAL_HEADER_CONTENT)
+        if(_global_header_content MATCHES "NOTFOUND")
+            set(_global_header_content "")
+        else()
+            set(_global_header_content "${_global_header_content}\n")
+        endif()
+        ecm_generate_export_header("${target}"
+            VERSION "${_target_version}"
             BASE_NAME "${_name_lower}"
-            EXPORT_FILE_NAME "${_global_header}")
+            EXPORT_FILE_NAME "${_global_header}"
+            CUSTOM_CONTENT_FROM_VARIABLE "${_global_header_content}"
+        )
         set_property(SOURCE "${_global_header}" PROPERTY GENERATED ON)
         target_sources("${target}" PRIVATE "${_global_header}")
         install(FILES "${_global_header}"
@@ -390,7 +401,7 @@ function(liri_finalize_module target)
         )
         write_basic_package_version_file(
             ${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}ConfigVersion.cmake
-            VERSION ${PROJECT_VERSION}
+            VERSION "${_target_version}"
             COMPATIBILITY AnyNewerVersion
         )
 
