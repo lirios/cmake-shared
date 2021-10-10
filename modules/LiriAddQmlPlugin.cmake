@@ -25,7 +25,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-function(liri_add_qml_plugin name)
+function(liri_add_qml_plugin target)
     # Find packages we need
     find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Qml Quick)
 
@@ -33,7 +33,7 @@ function(liri_add_qml_plugin name)
     cmake_parse_arguments(
         _arg
 	"STATIC"
-        "MODULE_PATH;VERSION;QTQUICK_COMPILER"
+        "OUTPUT_NAME;MODULE_PATH;VERSION;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args};QML_FILES"
         ${ARGN}
     )
@@ -45,12 +45,15 @@ function(liri_add_qml_plugin name)
         message(FATAL_ERROR "Missing argument MODULE_PATH.")
     endif()
 
+    if("x${_arg_OUTPUT_NAME}" STREQUAL "x")
+        set(_arg_OUTPUT_NAME "${target}plugin")
+    endif()
+
     if(NOT DEFINED _arg_VERSION)
         set(_arg_VERSION "1.0")
     endif()
 
-    set(target "${name}plugin")
-    string(TOUPPER "${name}" name_upper)
+    string(TOUPPER "${target}" name_upper)
     string(REGEX REPLACE "-" "_" name_upper "${name_upper}")
 
     # Find qmlplugindump
@@ -89,7 +92,10 @@ function(liri_add_qml_plugin name)
     else()
         add_library("${target}" SHARED ${_arg_SOURCES} ${_arg_QML_FILES})
     endif()
-    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "qmlplugin")
+    set_target_properties("${target}" PROPERTIES
+        LIRI_TARGET_TYPE "qmlplugin"
+        OUTPUT_NAME "${_arg_OUTPUT_NAME}"
+    )
 
     set(_static_defines "")
     if (_arg_STATIC)
@@ -141,9 +147,8 @@ function(liri_add_qml_plugin name)
     endif()
 endfunction()
 
-function(liri_finalize_qml_plugin name)
+function(liri_finalize_qml_plugin target)
     # This function right now is just an alias to liri_finalize_target()
     # for consistency with the liri_finalize_<target type> convention
-    set(target "${name}plugin")
     liri_finalize_target("${target}")
 endfunction()
