@@ -76,7 +76,7 @@ function(_liri_internal_forward_headers destination_var)
         # Create headers with class name
         foreach(_classname IN LISTS _classnames)
             set(_classname_header "${_arg_OUTPUT_DIR}/${_classname}")
-            file(WRITE "${_classname_header}" "#include <${_arg_MODULE_NAME}/${_actual_header_basename}>\n")
+            file(GENERATE OUTPUT "${_classname_header}" CONTENT "#include <${_arg_MODULE_NAME}/${_actual_header_basename}>\n" TARGET "${target}")
             list(APPEND ${destination_var} "${_classname_header}")
         endforeach()
 
@@ -89,10 +89,11 @@ function(_liri_internal_forward_headers destination_var)
     # Combine required headers into one convenience header
     if(_arg_MODULE_NAME)
         set(_common_header "${_arg_OUTPUT_DIR}/${_arg_MODULE_NAME}")
-        file(WRITE "${_common_header}" "// This header includes all the header files of the \"${_arg_MODULE_NAME}\" module.\n\n")
+        set(_contents "// This header includes all the header files of the \"${_arg_MODULE_NAME}\" module.\n\n")
         foreach(_header IN LISTS _required_headers)
-            file(APPEND "${_common_header}" "#include <${_arg_MODULE_NAME}/${_header}>\n")
+            set(_contents "${_contents}#include <${_arg_MODULE_NAME}/${_header}>\n")
         endforeach()
+        file(GENERATE OUTPUT "${_common_header}" CONTENT "${_contents}" TARGET "${target}")
         list(APPEND ${destination_var} "${_common_header}")
     endif()
 
@@ -386,7 +387,7 @@ function(liri_finalize_module target)
             if(NOT IS_ABSOLUTE "${_private_header}")
                 set(_private_header "${CMAKE_CURRENT_SOURCE_DIR}/${_private_header}")
             endif()
-            file(WRITE "${_private_include_dir}/${_filename}" "#include \"${_private_header}\"\n")
+            file(GENERATE OUTPUT "${_private_include_dir}/${_filename}" CONTENT "#include \"${_private_header}\"\n" TARGET "${target}")
             install(FILES "${_private_header}"
                     DESTINATION "${INSTALL_INCLUDEDIR}/${_name}/${PROJECT_VERSION}/${_name}/private"
                     COMPONENT Devel)
@@ -399,7 +400,7 @@ function(liri_finalize_module target)
             if(NOT IS_ABSOLUTE "${_install_header}")
                 set(_install_header "${CMAKE_CURRENT_SOURCE_DIR}/${_install_header}")
             endif()
-            file(WRITE "${_include_dir}/${_filename}" "#include \"${_install_header}\"\n")
+            file(GENERATE OUTPUT "${_include_dir}/${_filename}" CONTENT "#include \"${_install_header}\"\n" TARGET "${target}")
             install(FILES "${_install_header}"
                     DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
                     COMPONENT Devel)
@@ -425,7 +426,7 @@ function(liri_finalize_module target)
             "${_version_header}"
             @ONLY
         )
-        set_source_files_properties("${_version_header}" GENERATED)
+        set_property(SOURCE "${_version_header}" PROPERTY GENERATED ON)
         target_sources("${target}" PRIVATE "${_version_header}")
         install(FILES "${_version_header}"
                 DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
@@ -436,7 +437,7 @@ function(liri_finalize_module target)
         generate_export_header("${target}"
             BASE_NAME "${_name_lower}"
             EXPORT_FILE_NAME "${_global_header}")
-        set_source_files_properties("${_global_header}" GENERATED)
+        set_property(SOURCE "${_global_header}" PROPERTY GENERATED ON)
         target_sources("${target}" PRIVATE "${_global_header}")
         install(FILES "${_global_header}"
                 DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
@@ -492,6 +493,7 @@ function(liri_finalize_module target)
             INCLUDE_INSTALL_DIR "${INSTALL_INCLUDEDIR}"
             LIB_INSTALL_DIR "${INSTALL_LIBDIR}"
         )
+        set_property(SOURCE "${_pkgconfig_filename}" PROPERTY GENERATED ON)
         install(FILES "${_pkgconfig_filename}"
                 DESTINATION "${INSTALL_LIBDIR}/pkgconfig")
     endif()
