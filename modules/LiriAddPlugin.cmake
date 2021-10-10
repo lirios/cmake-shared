@@ -33,12 +33,16 @@ function(liri_add_plugin target)
     cmake_parse_arguments(
         _arg
 	"STATIC"
-        "TYPE;QTQUICK_COMPILER"
+        "TYPE;OUTPUT_NAME;QTQUICK_COMPILER"
         "${__default_private_args};${__default_public_args}"
         ${ARGN}
     )
     if(DEFINED _arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "Unknown arguments were passed to liri_add_plugin (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
+
+    if("x${_arg_OUTPUT_NAME}" STREQUAL "x")
+        set(_arg_OUTPUT_NAME "${target}")
     endif()
 
     string(TOUPPER "${target}" name_upper)
@@ -50,7 +54,10 @@ function(liri_add_plugin target)
     else()
         add_library("${target}" SHARED ${_arg_SOURCES})
     endif()
-    set_target_properties("${target}" PROPERTIES LIRI_TARGET_TYPE "plugin")
+    set_target_properties("${target}" PROPERTIES
+        LIRI_TARGET_TYPE "plugin"
+        OUTPUT_NAME "${_arg_OUTPUT_NAME}"
+    )
 
     set(_static_defines "")
     if (_arg_STATIC)
