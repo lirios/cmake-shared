@@ -275,6 +275,7 @@ function(liri_finalize_target target)
 endfunction()
 
 # Include public functions
+include(LiriFeatures)
 include(LiriProperties)
 include(LiriAddModule)
 include(LiriAddExecutable)
