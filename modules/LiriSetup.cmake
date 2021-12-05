@@ -58,8 +58,9 @@ if(CLANG)
     option(LIRI_ENABLE_CLAZY "Enable Clazy warnings" OFF)
     add_feature_info("Clazy" LIRI_ENABLE_CLAZY "Clazy warnings")
 
-    if(LIRI_ENABLE_CLAZY)
+    if(LIRI_ENABLE_CLAZY AND NOT LIRI_CLAZY_ENABLED)
         set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClazyPlugin${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clazy")
+        set(LIRI_CLAZY_ENABLED ON)
     endif()
 endif()
 
@@ -68,9 +69,10 @@ if(GCC)
     option(LIRI_ENABLE_COVERAGE "Enable GCov code coverage support (gcc only)" OFF)
     add_feature_info("Coverage" LIRI_ENABLE_COVERAGE "Code coverage (gcc only)")
 
-    if(LIRI_ENABLE_COVERAGE)
+    if(LIRI_ENABLE_COVERAGE AND NOT LIRI_COVERAGE_ENABLED)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+        set(LIRI_COVERAGE_ENABLED ON)
     endif()
 endif()
 
