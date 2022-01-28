@@ -199,17 +199,15 @@ function(liri_add_module name)
         )
     endif()
 
-    # Install CMake target
-    if(NOT _arg_NO_CMAKE)
-        install(
-            TARGETS "${target}" "${target_private}"
-            EXPORT "${_versioned_name}Targets"
-            LIBRARY DESTINATION "${INSTALL_LIBDIR}"
-            ARCHIVE DESTINATION "${INSTALL_LIBDIR}"
-            PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}"
-            PRIVATE_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
-        )
-    endif()
+    # Install targets
+    install(
+        TARGETS "${target}" "${target_private}"
+        EXPORT "${_versioned_name}Targets"
+        LIBRARY DESTINATION "${INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${INSTALL_LIBDIR}"
+        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}"
+        PRIVATE_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
+    )
 endfunction()
 
 function(liri_finalize_module target)
