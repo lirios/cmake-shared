@@ -382,7 +382,12 @@ function(liri_finalize_module target)
         )
 
         set(_extra_cmake_files)
-        if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Dependencies.cmake")
+        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Dependencies.cmake.in")
+            configure_file(
+                "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Dependencies.cmake.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Dependencies.cmake"
+                @ONLY
+            )
             list(APPEND _extra_cmake_files "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Dependencies.cmake")
         elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Dependencies.cmake")
             list(APPEND _extra_cmake_files "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Dependencies.cmake")
