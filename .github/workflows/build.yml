@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 name: CI
 
 on:
@@ -5,31 +9,13 @@ on:
     branches:
       - master
       - develop
+    tags:
+      - v*
   pull_request:
     branches:
       - master
       - develop
 
 jobs:
-  build:
-    if: "!contains(github.event.head_commit.message, 'ci skip')"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Extract branch name
-        id: extract_branch
-        shell: bash
-        run: |
-          if [ -n "${{ github.base_ref }}" ]; then
-            echo "##[set-output name=branch;]${{ github.base_ref }}"
-          else
-            github_ref=${{ github.ref }}
-            echo "##[set-output name=branch;]${github_ref##*/}"
-          fi
-      - uses: actions/checkout@v2
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr
-          make -j
-          make install
+  linux-qt5:
+    uses: lirios/.github/.github/workflows/build-linux-qt5.yml@master
