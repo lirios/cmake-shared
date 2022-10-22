@@ -2,7 +2,6 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/@_versioned_name@Targets.cmake")
 
-include(CMakeFindDependencyMacro)
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/@_versioned_name@Dependencies.cmake")
     include("${CMAKE_CURRENT_LIST_DIR}/@_versioned_name@Dependencies.cmake")
 endif()
