@@ -373,7 +373,7 @@ function(liri_finalize_module target)
             VERSION "${_target_version}"
             BASE_NAME "${_name_lower}"
             EXPORT_FILE_NAME "${_global_header}"
-            CUSTOM_CONTENT_FROM_VARIABLE "${_global_header_content}"
+            CUSTOM_CONTENT_FROM_VARIABLE "_global_header_content"
         )
         set_property(SOURCE "${_global_header}" PROPERTY GENERATED ON)
         target_sources("${target}" PRIVATE "${_global_header}")
