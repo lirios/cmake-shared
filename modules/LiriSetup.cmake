@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Minimum CMake version required
 cmake_minimum_required(VERSION 3.17.0)
 

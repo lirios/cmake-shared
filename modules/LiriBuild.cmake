@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2022 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+# SPDX-FileCopyrightText: 2022 The Qt Company Ltd.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Save the location of some templates while CMAKE_CURRENT_LIST_DIR has the value we want:
 set(_LIRI_VERSION_HEADER_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/LiriModuleVersion.h.in")
 set(_LIRI_MODULE_CONFIG_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/LiriModuleConfig.cmake.in")

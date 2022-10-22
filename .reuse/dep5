@@ -1,0 +1,15 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Desktop Portal
+Source: https://github.com/lirios/xdg-desktop-portal-liri
+
+Files: .tag
+Copyright: 2022 Pier Luigi Fiorini
+License: CC0-1.0
+
+Files: .gitattributes
+Copyright: 2022 Pier Luigi Fiorini
+License: CC0-1.0
+
+Files: README.md
+Copyright: 2022 Pier Luigi Fiorini
+License: CC0-1.0
