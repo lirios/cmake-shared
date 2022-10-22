@@ -420,7 +420,6 @@ function(liri_finalize_module target)
             DESTINATION "${_config_install_dir}"
             COMPONENT Devel
         )
-        message(STATUS "Extra CMake files [${_extra_cmake_files}]")
     endif()
 
     # Generate pkg-config file
