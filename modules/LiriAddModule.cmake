@@ -403,6 +403,14 @@ function(liri_finalize_module target)
             COMPATIBILITY AnyNewerVersion
         )
 
+        if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Dependencies.cmake")
+            install(FILES
+                "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Dependencies.cmake"
+                DESTINATION "${_config_install_dir}"
+                COMPONENT Devel
+            )
+        endif()
+
         set(_extra_cmake_files)
         if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Dependencies.cmake")
             list(APPEND _extra_cmake_files "${CMAKE_CURRENT_LIST_DIR}/${_versioned_name}Dependencies.cmake")
