@@ -90,6 +90,3 @@ include(CTest)
 if(BUILD_TESTING)
     enable_testing()
 endif()
-
-## Print a feature summary:
-feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
