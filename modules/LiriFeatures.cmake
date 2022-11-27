@@ -47,5 +47,5 @@ function(liri_config_compile_test name)
     set(CMAKE_REQUIRED_DEFINITIONS "${_save_CMAKE_REQUIRED_DEFINITIONS}")
     set(CMAKE_REQUIRED_LIBRARIES "${_save_CMAKE_REQUIRED_LIBRARIES}")
 
-    set(TEST_${name} "${_have${name}}" CACHE INTERNAL "${_arg_LABEL}")
+    set(TEST_${name} "${_have${name}}" INTERNAL "${_arg_LABEL}")
 endfunction()
