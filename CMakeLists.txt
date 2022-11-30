@@ -15,6 +15,7 @@ set(INSTALL_DATADIR "share" CACHE PATH  "Arch-independent data [PREFIX/share]")
 
 set(CMAKECONFIG_INSTALL_DIR "${INSTALL_DATADIR}/LiriCMakeShared/cmake/")
 set(MODULES_INSTALL_DIR "${INSTALL_DATADIR}/LiriCMakeShared/modules/")
+set(FIND_MODULES_INSTALL_DIR "${INSTALL_DATADIR}/LiriCMakeShared/find-modules/")
 
 include(CMakePackageConfigHelpers)
 
@@ -46,4 +47,6 @@ install(
 ## Install:
 
 file(GLOB modules_FILES "${CMAKE_SOURCE_DIR}/modules/*[^~]")
+file(GLOB find_modules_FILES "${CMAKE_SOURCE_DIR}/find-modules/*[^~]")
 install(FILES ${modules_FILES} DESTINATION "${MODULES_INSTALL_DIR}")
+install(FILES ${find_modules_FILES} DESTINATION "${FIND_MODULES_INSTALL_DIR}")
