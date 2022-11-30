@@ -26,6 +26,7 @@ configure_package_config_file(
         "${CMAKECONFIG_INSTALL_DIR}"
     PATH_VARS
         MODULES_INSTALL_DIR
+        FIND_MODULES_INSTALL_DIR
 )
 
 write_basic_package_version_file(
