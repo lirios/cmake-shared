@@ -78,7 +78,6 @@ if(NOT WIN32)
             IMPORTED_LOCATION "${XkbCommon_LIBRARY}"
             INTERFACE_COMPILE_OPTIONS "${XkbCommon_DEFINITIONS}"
             INTERFACE_INCLUDE_DIRECTORIES "${XkbCommon_INCLUDE_DIR}"
-            INTERFACE_INCLUDE_DIRECTORIES "${XkbCommon_INCLUDE_DIR}/xkbcommon"
         )
     endif()
 
@@ -88,7 +87,6 @@ if(NOT WIN32)
     set(XkbCommon_LIBRARIES ${XkbCommon_LIBRARY})
     set(XkbCommon_INCLUDE_DIRS ${XkbCommon_INCLUDE_DIR} "${XkbCommon_INCLUDE_DIR}/xkbcommon")
     set(XkbCommon_VERSION_STRING ${XkbCommon_VERSION})
-
 else()
     message(STATUS "FindXkbCommon.cmake cannot find xkbcommon on Windows systems.")
     set(XkbCommon_FOUND FALSE)
