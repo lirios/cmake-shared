@@ -40,6 +40,8 @@ def prepare(filename: str):
                 line += ';'
             if re.match(r'^#define.*[^\\]\s*$', line):
                 line += ';'
+            if re.match(r'^#endif', line):
+                line += ';'
 
             # Put ';' after every Qt macro we know of
             if re.match(r'^Q_[A-Z_0-9]*\(.*\)[\r\n]*$', line):
