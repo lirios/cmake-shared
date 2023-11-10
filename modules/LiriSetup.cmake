@@ -12,7 +12,9 @@ find_package(ECM "5.99.0" REQUIRED NO_MODULE)
 list(APPEND CMAKE_MODULE_PATH "${ECM_MODULE_PATH};${ECM_KDE_MODULE_DIR}")
 
 ## Force C++ standard, do not fall back, use compiler extensions:
-set(CMAKE_CXX_STANDARD 17)
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
