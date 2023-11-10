@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2022 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: COPR
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  copr:
+    uses: lirios/.github/.github/workflows/copr.yml@master
+    secrets:
+      COPR_WEBHOOK_URL: ${{ secrets.COPR_WEBHOOK_URL }}

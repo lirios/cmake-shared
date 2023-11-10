@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2022 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  linux-qt5:
+    uses: lirios/.github/.github/workflows/build-linux-qt5.yml@master

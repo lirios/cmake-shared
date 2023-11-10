@@ -1,22 +1,32 @@
+# SPDX-FileCopyrightText: 2022 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+# SPDX-FileCopyrightText: 2022 The Qt Company Ltd.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+include(QtVersionOption)
+
 # Save the location of some templates while CMAKE_CURRENT_LIST_DIR has the value we want:
 set(_LIRI_VERSION_HEADER_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/LiriModuleVersion.h.in")
 set(_LIRI_MODULE_CONFIG_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/LiriModuleConfig.cmake.in")
 
+include(CMakeParseArguments)
+include(GNUInstallDirs)
+
 # Install locations:
-set(INSTALL_BINDIR "bin" CACHE PATH "Executables [PREFIX/bin]")
-set(INSTALL_INCLUDEDIR "include" CACHE PATH "Header files [PREFIX/include]")
-set(INSTALL_LIBDIR "lib" CACHE PATH "Libraries [PREFIX/lib]")
+set(INSTALL_BINDIR "${CMAKE_INSTALL_BINDIR}" CACHE PATH "Executables [PREFIX/bin]")
+set(INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}" CACHE PATH "Header files [PREFIX/include]")
+set(INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Libraries [PREFIX/lib]")
 set(INSTALL_PLUGINSDIR "${INSTALL_LIBDIR}/plugins" CACHE PATH
     "Plugins [LIBDIR/plugins]")
-set(INSTALL_LIBEXECDIR "libexec" CACHE PATH "Helper programs [PREFIX/libexec]")
+set(INSTALL_LIBEXECDIR "${CMAKE_INSTALL_LIBEXECDIR}" CACHE PATH "Helper programs [PREFIX/libexec]")
 set(INSTALL_QMLDIR "${INSTALL_LIBDIR}/qml" CACHE PATH "QML2 imports [LIBDIR/qml]")
-set(INSTALL_DATADIR "share" CACHE PATH  "Arch-independent data [PREFIX/share]")
-set(INSTALL_APPLICATIONSDIR "share/applications" CACHE PATH
+set(INSTALL_DATADIR "${CMAKE_INSTALL_DATADIR}" CACHE PATH  "Arch-independent data [PREFIX/share]")
+set(INSTALL_APPLICATIONSDIR "${INSTALL_DATADIR}/applications" CACHE PATH
     "Desktop entries [PREFIX/share/applications]")
-set(INSTALL_METAINFODIR "share/metainfo" CACHE PATH
+set(INSTALL_METAINFODIR "${INSTALL_DATADIR}/metainfo" CACHE PATH
     "AppStream metadata [PREFIX/share/metainfo]")
 set(INSTALL_DOCDIR "${INSTALL_DATADIR}/doc" CACHE PATH "Documentation [DATADIR/doc]")
-set(INSTALL_SYSCONFDIR "etc" CACHE PATH "Settings used by Liri programs [PREFIX/etc]")
+set(INSTALL_SYSCONFDIR "${CMAKE_INSTALL_SYSCONFDIR}" CACHE PATH "Settings used by Liri programs [PREFIX/etc]")
 
 # Make Qt Creator QML syntax highlighting aware of our modules:
 set(QML_IMPORT_PATH "${CMAKE_INSTALL_PREFIX}/${INSTALL_QMLDIR}" CACHE PATH
@@ -43,75 +53,17 @@ endif()
 # Functions and macros:
 
 
-# Print all variables defined in the current scope.
-macro(_debug_print_variables)
-    cmake_parse_arguments(__arg "DEDUP" "" "MATCH;IGNORE" ${ARGN})
-    message("Known Variables:")
-    get_cmake_property(__variableNames VARIABLES)
-    list (SORT __variableNames)
-    if (__arg_DEDUP)
-        list(REMOVE_DUPLICATES __variableNames)
-    endif()
-
-    foreach(__var ${__variableNames})
-        set(__ignore OFF)
-        foreach(__i ${__arg_IGNORE})
-            if(__var MATCHES "${__i}")
-                set(__ignore ON)
-                break()
-            endif()
-        endforeach()
-
-        if (__ignore)
-            continue()
-        endif()
-
-        set(__show OFF)
-        foreach(__i ${__arg_MATCH})
-            if(__var MATCHES "${__i}")
-                set(__show ON)
-                break()
-            endif()
-        endforeach()
-
-        if (__show)
-            message("    ${__var}=${${__var}}.")
-        endif()
-    endforeach()
-endmacro()
-
-
-macro(assert)
-    if (${ARGN})
-    else()
-        message(FATAL_ERROR "ASSERT: ${ARGN}.")
-    endif()
-endmacro()
-
-
-# A version of cmake_parse_arguments that makes sure all arguments are processed and errors out
-# with a message about ${type} having received unknown arguments.
-macro(_liri_parse_all_arguments result type flags options multiopts)
-    cmake_parse_arguments(${result} "${flags}" "${options}" "${multiopts}" ${ARGN})
-    if(DEFINED ${result}_UNPARSED_ARGUMENTS)
-        message(FATAL_ERROR "Unknown arguments were passed to ${type} (${${result}_UNPARSED_ARGUMENTS}).")
-    endif()
-endmacro()
-
-
-function(_liri_module_name name result)
-    set("${result}" "Liri${name}" PARENT_SCOPE)
-endfunction()
-
-
 function(_qdbusxml2cpp_command target infile)
-    _liri_parse_all_arguments(
-        _arg "_qdbusxml2cpp_command"
+    cmake_parse_arguments(
+        _arg
         "ADAPTOR;INTERFACE"
         ""
         "FLAGS"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to _qdbusxml2cpp_command (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
     if((_arg_ADAPTOR AND _arg_INTERFACE) OR (NOT _arg_ADAPTOR AND NOT _arg_INTERFACE))
         message(FATAL_ERROR "_qdbusxml2cpp_command needs either ADAPTOR or INTERFACE.")
@@ -136,6 +88,7 @@ function(_qdbusxml2cpp_command target infile)
     add_custom_command(
         OUTPUT "${_header_filename}" "${_source_filename}"
         COMMAND Qt5::qdbusxml2cpp ${_arg_FLAGS} "${_option}" "${_header_filename}:${_source_filename}" "${infile}"
+        COMMAND echo "// clazy:skip" >> "${_header_filename}"
         DEPENDS "${infile}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         VERBATIM
@@ -146,62 +99,196 @@ function(_qdbusxml2cpp_command target infile)
     target_sources("${target}" PRIVATE "${_header_filename}" "${_source_filename}" "${_moc_sources}")
 endfunction()
 
+function(_liri_internal_process_qdbusxml2cpp target)
+    if(NOT TARGET "${target}")
+        message(FATAL_ERROR "Trying to extend non-existing target \"${target}\".")
+    endif()
+
+    cmake_parse_arguments(_arg "" "" "DBUS_ADAPTOR_FLAGS;DBUS_ADAPTOR_SOURCES;DBUS_INTERFACE_FLAGS;DBUS_INTERFACE_SOURCES" ${ARGN})
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to _liri_internal_process_qdbusxml2cpp (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
+
+   # Add D-Bus adaptor sources
+   foreach(adaptor IN LISTS _arg_DBUS_ADAPTOR_SOURCES)
+       _qdbusxml2cpp_command("${target}" "${adaptor}" ADAPTOR FLAGS "${_arg_DBUS_ADAPTOR_FLAGS}")
+   endforeach()
+
+   # Add D-Bus interface sources
+   foreach(interface IN LISTS _arg_DBUS_INTERFACE_SOURCES)
+       _qdbusxml2cpp_command("${target}" "${interface}" INTERFACE FLAGS "${_arg_DBUS_INTERFACE_FLAGS}")
+   endforeach()
+
+   # This implicitely requires Qt5::DBus
+   list(FIND _libraries "Qt5::DBus" _qt5_dbus_index)
+   if(${_qt5_dbus_index} EQUAL -1)
+       find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS DBus)
+       message(STATUS "Adding Qt5::DBus target to ${target}")
+       target_link_libraries("${target}" PRIVATE "Qt5::DBus")
+   endif()
+endfunction()
+
 
 set(__default_private_args "SOURCES;LIBRARIES;INCLUDE_DIRECTORIES;DEFINES;RESOURCES;DBUS_ADAPTOR_FLAGS;DBUS_ADAPTOR_SOURCES;DBUS_INTERFACE_FLAGS;DBUS_INTERFACE_SOURCES")
 set(__default_public_args "PUBLIC_LIBRARIES;PUBLIC_INCLUDE_DIRECTORIES;PUBLIC_DEFINES")
+set(__default_module_args "PRIVATE_HEADERS;CLASS_HEADERS;INSTALL_HEADERS;PKGCONFIG_DEPENDENCIES")
 
 
 # This function can be used to add sources/libraries/etc. to the specified CMake target
 # if the provided CONDITION evaluates to true.
-function(extend_target target)
+function(liri_extend_target target)
     if(NOT TARGET "${target}")
         message(FATAL_ERROR "Trying to extend non-existing target \"${target}\".")
     endif()
-    _liri_parse_all_arguments(
-        _arg "extend_target"
+
+    cmake_parse_arguments(
+        _arg
         ""
-        "EXPORT_IMPORT_CONDITION"
-        "${__default_public_args};${__default_private_args};COMPILE_FLAGS"
+        "EXPORT_IMPORT_CONDITION;GLOBAL_HEADER_CONTENT"
+        "CONDITION;${__default_public_args};${__default_private_args};${__default_module_args};COMPILE_FLAGS;OUTPUT_NAME"
         ${ARGN}
     )
+    if(DEFINED _arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments were passed to liri_extend_target (${_arg_UNPARSED_ARGUMENTS}).")
+    endif()
 
-    set(dbus_sources "")
-    foreach(adaptor ${_arg_DBUS_ADAPTOR_SOURCES})
-        _qdbusxml2cpp_command("${target}" "${adaptor}" ADAPTOR FLAGS "${_arg_DBUS_ADAPTOR_FLAGS}")
-        list(APPEND dbus_sources "${sources}")
-    endforeach()
-    foreach(interface ${_arg_DBUS_INTERFACE_SOURCES})
-        _qdbusxml2cpp_command("${target}" "${interface}" INTERFACE FLAGS "${_arg_DBUS_INTERFACE_FLAGS}")
-        list(APPEND dbus_sources "${sources}")
-    endforeach()
-    if(_arg_DBUS_ADAPTOR_SOURCES OR _arg_DBUS_INTERFACE_SOURCES)
-        # This implicitely requires Qt5::DBus
-        list(FIND _arg_LIBRARIES "Qt5::DBus" _qt5_dbus_index)
-        if(${_qt5_dbus_index} EQUAL -1)
-            find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS DBus)
-            message(STATUS "Adding Qt5::DBus target to ${target}")
-            list(APPEND _arg_LIBRARIES "Qt5::DBus")
+    # If CONDITION is not specified, we apply all properties requested by the user
+    if(DEFINED _arg_CONDITION)
+        if(_arg_CONDITION)
+            set(_condition ON)
+        else()
+            set(_condition OFF)
+        endif()
+    else()
+        set(_condition ON)
+    endif()
+
+    if(_condition)
+        get_target_property(_target_type "${target}" LIRI_TARGET_TYPE)
+
+        if(_arg_SOURCES)
+            target_sources("${target}" PRIVATE ${_arg_SOURCES})
+        endif()
+
+        if(_arg_EXPORT_IMPORT_CONDITION)
+            set_target_properties("${target}" PROPERTIES DEFINE_SYMBOL "${_arg_EXPORT_IMPORT_CONDITION}")
+        endif()
+
+        if(_arg_COMPILE_FLAGS)
+            target_compile_options("${target}" PUBLIC "${_arg_COMPILE_FLAGS}")
+        endif()
+
+        if(_arg_OUTPUT_NAME)
+            set_target_properties("${target}" PROPERTIES OUTPUT_NAME "${_arg_OUTPUT_NAME}")
+        endif()
+
+        if(_arg_PUBLIC_LIBRARIES)
+            target_link_libraries("${target}" PUBLIC ${_arg_PUBLIC_LIBRARIES})
+        endif()
+        if(_arg_LIBRARIES)
+            target_link_libraries("${target}" PRIVATE ${_arg_LIBRARIES})
+        endif()
+
+        if(_arg_PUBLIC_INCLUDE_DIRECTORIES)
+            target_include_directories("${target}" PUBLIC ${_arg_PUBLIC_INCLUDE_DIRECTORIES})
+        endif()
+        if(_arg_INCLUDE_DIRECTORIES)
+            target_include_directories("${target}" PRIVATE ${_arg_INCLUDE_DIRECTORIES})
+        endif()
+
+        if(_arg_PUBLIC_DEFINES)
+            target_compile_definitions("${target}" PUBLIC ${_arg_PUBLIC_DEFINES})
+        endif()
+        if(_arg_DEFINES)
+            target_compile_definitions("${target}" PRIVATE ${_arg_DEFINES})
+        endif()
+
+        # Custom properties for all kinds of targets
+        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_ADAPTOR_SOURCES "${_arg_DBUS_ADAPTOR_SOURCES}")
+        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_ADAPTOR_FLAGS "${_arg_DBUS_ADAPTOR_FLAGS}")
+        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_INTERFACE_SOURCES "${_arg_DBUS_INTERFACE_SOURCES}")
+        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_INTERFACE_FLAGS "${_arg_DBUS_INTERFACE_FLAGS}")
+        set_property(TARGET "${target}" APPEND PROPERTY LIRI_RESOURCES "${_arg_RESOURCES}")
+
+        # Custom properties only for Liri modules
+        if(_target_type STREQUAL "module")
+            set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_GLOBAL_HEADER_CONTENT "${_arg_GLOBAL_HEADER_CONTENT}")
+            set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_PKGCONFIG_DEPENDENCIES "${_arg_PKGCONFIG_DEPENDENCIES}")
+            set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_PRIVATE_HEADERS "${_arg_PRIVATE_HEADERS}")
+            set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_CLASS_HEADERS "${_arg_CLASS_HEADERS}")
+            set_property(TARGET "${target}" APPEND PROPERTY LIRI_MODULE_INSTALL_HEADERS "${_arg_INSTALL_HEADERS}")
         endif()
     endif()
+endfunction()
 
-    target_sources("${target}" PRIVATE ${_arg_SOURCES} ${dbus_sources})
-    if(DEFINED _arg_EXPORT_IMPORT_CONDITION)
-        set_target_properties("${target}" PROPERTIES DEFINE_SYMBOL "${_arg_EXPORT_IMPORT_CONDITION}")
+# Perform common setup actions on targets.
+function(liri_finalize_target target)
+    if(NOT TARGET "${target}")
+        message(FATAL_ERROR "Trying to extend non-existing target \"${target}\".")
     endif()
-    target_include_directories("${target}" PUBLIC ${_arg_PUBLIC_INCLUDE_DIRECTORIES} PRIVATE ${_arg_INCLUDE_DIRECTORIES})
-    target_compile_definitions("${target}" PUBLIC ${_arg_PUBLIC_DEFINES} PRIVATE ${_arg_DEFINES})
-    if(DEFINED _arg_COMPILE_FLAGS)
-        target_compile_options("${target}" PUBLIC "${_arg_COMPILE_FLAGS}")
+
+    get_target_property(_dbus_adaptor_sources "${target}" LIRI_DBUS_ADAPTOR_SOURCES)
+    if(_dbus_adaptor_sources MATCHES "NOTFOUND")
+        set(_dbus_adaptor_sources "")
     endif()
-    target_link_libraries("${target}" PUBLIC ${_arg_PUBLIC_LIBRARIES} PRIVATE ${_arg_LIBRARIES})
+    get_target_property(_dbus_interface_sources "${target}" LIRI_DBUS_INTERFACE_SOURCES)
+    if(_dbus_interface_sources MATCHES "NOTFOUND")
+        set(_dbus_interface_sources "")
+    endif()
+    get_target_property(_resource_files "${target}" LIRI_RESOURCES)
+    if(_resource_files MATCHES "NOTFOUND")
+        set(_resource_files "")
+    endif()
+    get_target_property(_qtquick_compiler "${target}" LIRI_ENABLE_QTQUICK_COMPILER)
+    if(_qtquick_compiler MATCHES "NOTFOUND")
+        set(_qtquick_compiler OFF)
+    endif()
+
+    # D-Bus sources
+    if(_dbus_adaptor_sources OR _dbus_interface_sources)
+        get_target_property(_dbus_adaptor_flags "${target}" LIRI_DBUS_ADAPTOR_FLAGS)
+        if(_dbus_adaptor_flags MATCHES "NOTFOUND")
+            set(_dbus_adaptor_flags "")
+        endif()
+        get_target_property(_dbus_interface_flags "${target}" LIRI_DBUS_INTERFACE_FLAGS)
+        if(_dbus_interface_flags MATCHES "NOTFOUND")
+            set(_dbus_interface_flags "")
+        endif()
+
+        _liri_internal_process_qdbusxml2cpp("${target}"
+           DBUS_ADAPTOR_SOURCES "${_dbus_adaptor_sources}"
+            DBUS_ADAPTOR_FLAGS "${_dbus_adaptor_flags}"
+            DBUS_INTERFACE_SOURCES "${_dbus_interface_sources}"
+            DBUS_INTERFACE_FLAGS "${_dbus_interface_flags}"
+        )
+    endif()
+
+    # Resources
+    if(_resource_files)
+        if(_qtquick_compiler)
+            find_package(Qt5QuickCompiler)
+            if(Qt5QuickCompiler_FOUND)
+                qtquick_compiler_add_resources(_resource_bins ${_resource_files})
+                target_sources("${target}" PRIVATE ${_resource_files})
+            else()
+                message(WARNING "Qt5QuickCompiler not found, fall back to standard resources")
+                qt5_add_resources(_resource_bins ${_resource_files})
+            endif()
+        else()
+            qt5_add_resources(_resource_bins ${_resource_files})
+        endif()
+        target_sources("${target}" PRIVATE ${_resource_bins})
+    endif()
 endfunction()
 
 # Include public functions
+include(LiriFeatures)
+include(LiriProperties)
 include(LiriAddModule)
 include(LiriAddExecutable)
 include(LiriAddTest)
 include(LiriAddPlugin)
 include(LiriAddQmlPlugin)
 include(LiriAddQmlModule)
-include(LiriAddIndicator)
+include(LiriAddStatusAreaExtension)
 include(LiriAddSettingsModule)

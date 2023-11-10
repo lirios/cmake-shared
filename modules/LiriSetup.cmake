@@ -1,20 +1,20 @@
-if(LIRI_LOCAL_ECM)
-    ## Add some paths to check for CMake modules:
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/modules")
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/find-modules")
+# SPDX-FileCopyrightText: 2018 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+#
+# SPDX-License-Identifier: BSD-3-Clause
 
-    set(ECM_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/modules/")
-    set(ECM_FIND_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}/../3rdparty/extra-cmake-modules/find-modules/")
-else()
-    ## Find ECM:
-    find_package(ECM "5.48.0" REQUIRED NO_MODULE)
+# Minimum CMake version required
+cmake_minimum_required(VERSION 3.17.0)
 
-    ## Add some paths to check for CMake modules:
-    list(APPEND CMAKE_MODULE_PATH "${ECM_MODULE_PATH};${ECM_KDE_MODULE_DIR}")
-endif()
+## Find ECM:
+find_package(ECM "5.99.0" REQUIRED NO_MODULE)
+
+## Add some paths to check for CMake modules:
+list(APPEND CMAKE_MODULE_PATH "${ECM_MODULE_PATH};${ECM_KDE_MODULE_DIR}")
 
 ## Force C++ standard, do not fall back, use compiler extensions:
-set(CMAKE_CXX_STANDARD 14)
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
@@ -55,8 +55,10 @@ if(CLANG)
     option(LIRI_ENABLE_CLAZY "Enable Clazy warnings" OFF)
     add_feature_info("Clazy" LIRI_ENABLE_CLAZY "Clazy warnings")
 
-    if(LIRI_ENABLE_CLAZY)
-        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ClazyPlugin${CMAKE_SHARED_LIBRARY_SUFFIX} -Xclang -add-plugin -Xclang clazy")
+    if(LIRI_ENABLE_CLAZY AND NOT LIRI_CLAZY_ENABLED)
+        find_library(__clazy_plugin "ClazyPlugin${CMAKE_SHARED_LIBRARY_SUFFIX}" NO_CACHE REQUIRED)
+        set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} -Xclang -load -Xclang ${__clazy_plugin} -Xclang -add-plugin -Xclang clazy")
+        set(LIRI_CLAZY_ENABLED ON)
     endif()
 endif()
 
@@ -65,9 +67,20 @@ if(GCC)
     option(LIRI_ENABLE_COVERAGE "Enable GCov code coverage support (gcc only)" OFF)
     add_feature_info("Coverage" LIRI_ENABLE_COVERAGE "Code coverage (gcc only)")
 
-    if(LIRI_ENABLE_COVERAGE)
+    if(LIRI_ENABLE_COVERAGE AND NOT LIRI_COVERAGE_ENABLED)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+        set(LIRI_COVERAGE_ENABLED ON)
+    endif()
+endif()
+
+## Enable colored output:
+option(LIRI_FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (gcc/Clang only)." ON)
+if(${LIRI_FORCE_COLORED_OUTPUT})
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+       add_compile_options("-fdiagnostics-color=always")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+       add_compile_options("-fcolor-diagnostics")
     endif()
 endif()
 
@@ -79,6 +92,3 @@ include(CTest)
 if(BUILD_TESTING)
     enable_testing()
 endif()
-
-## Print a feature summary:
-feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
