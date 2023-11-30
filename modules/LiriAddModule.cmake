@@ -1,10 +1,13 @@
-# SPDX-FileCopyrightText: 2022 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+# SPDX-FileCopyrightText: 2022-2023 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
 # SPDX-FileCopyrightText: 2022 The Qt Company Ltd.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/detect-class-headers")
+set(_fwd_headers_exe "${CMAKE_CURRENT_LIST_DIR}/detect-class-headers")# Save the location of some templates while CMAKE_CURRENT_LIST_DIR has the value we want:
+set(_header_template "${CMAKE_CURRENT_LIST_DIR}/LiriModuleVersion.h.in")
+set(_module_config_template "${CMAKE_CURRENT_LIST_DIR}/LiriModuleConfig.cmake.in")
 
+include(CMakeParseArguments)
 include(LiriModuleHeaders)
 
 # This is the main entry function for creating a Liri module, that typically
@@ -15,13 +18,10 @@ include(LiriModuleHeaders)
 # Liri modules provide also a way to be used by other build systems,
 # in the form of a CMake package and pkg-config file.
 function(liri_add_module name)
-    # Find packages we need
-    find_package(Qt5 "5.0" CONFIG REQUIRED COMPONENTS Core)
-
     # Parse arguments
     cmake_parse_arguments(
         _arg
-        "QTQUICK_COMPILER;NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
+        "NO_MODULE_HEADERS;NO_CMAKE;NO_PKGCONFIG;STATIC"
         "DESCRIPTION;MODULE_NAME;GLOBAL_HEADER_CONTENT;VERSIONED_MODULE_NAME"
         "${__default_private_args};${__default_public_args};INSTALL_HEADERS;CLASS_HEADERS;PRIVATE_HEADERS;PKGCONFIG_DEPENDENCIES"
         ${ARGN}
@@ -89,36 +89,44 @@ function(liri_add_module name)
     set(_include_dir "${_parent_include_dir}/${module}")
     set(_private_include_dir "${_include_dir}/${PROJECT_VERSION}/${module}/private")
 
-    # Extend the target
-    liri_extend_target("${target}"
-        PUBLIC_INCLUDE_DIRECTORIES
+    # Target include directories
+    target_include_directories("${target}"
+        PUBLIC
             "$<BUILD_INTERFACE:${_parent_include_dir}>"
             "$<INSTALL_INTERFACE:include>"
             ${_arg_PUBLIC_INCLUDE_DIRECTORIES}
-        INCLUDE_DIRECTORIES
+    )
+    target_include_directories("${target}"
+        PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
             "${CMAKE_CURRENT_BINARY_DIR}"
             "$<BUILD_INTERFACE:${_parent_include_dir}>"
             "${_include_dir}/${PROJECT_VERSION}"
             "${_include_dir}/${PROJECT_VERSION}/${module}"
             ${_arg_INCLUDE_DIRECTORIES}
-        PUBLIC_DEFINES
-            ${_arg_PUBLIC_DEFINES}
+    )
+
+    # Defines
+    target_compile_definitions("${target}"
+        PUBLIC
             LIRI_${name_upper}_LIB
-        DEFINES
+            ${_arg_PUBLIC_DEFINES}
+    )
+    target_compile_definitions("${target}"
+        PRIVATE
             QT_NO_CAST_TO_ASCII QT_ASCII_CAST_WARNINGS
             QT_USE_QSTRINGBUILDER
             QT_DEPRECATED_WARNINGS
             ${_arg_DEFINES}
-        EXPORT_IMPORT_CONDITION
-            LIRI_BUILD_${name_upper}_LIB
-        PUBLIC_LIBRARIES ${_arg_PUBLIC_LIBRARIES}
-        LIBRARIES ${_arg_LIBRARIES}
+    )
+
+    # Libraries
+    target_link_libraries("${target}" PUBLIC ${_arg_PUBLIC_LIBRARIES})
+    target_link_libraries("${target}" PRIVATE ${_arg_LIBRARIES})
+
+    # Extend the target
+    liri_extend_target("${target}"
         RESOURCES ${_arg_RESOURCES}
-        DBUS_ADAPTOR_SOURCES ${_arg_DBUS_ADAPTOR_SOURCES}
-        DBUS_ADAPTOR_FLAGS ${_arg_DBUS_ADAPTOR_FLAGS}
-        DBUS_INTERFACE_SOURCES ${_arg_DBUS_INTERFACE_SOURCES}
-        DBUS_INTERFACE_FLAGS ${_arg_DBUS_INTERFACE_FLAGS}
         GLOBAL_HEADER_CONTENT ${_arg_GLOBAL_HEADER_CONTENT}
         PRIVATE_HEADERS ${_arg_PRIVATE_HEADERS}
         CLASS_HEADERS ${_arg_CLASS_HEADERS}
@@ -127,19 +135,20 @@ function(liri_add_module name)
     )
 
     # Set custom properties
-    set_target_properties("${target}" PROPERTIES LIRI_MODULE_DESCRIPTION "${_arg_DESCRIPTION}")
-    set_target_properties("${target}" PROPERTIES LIRI_MODULE_NAME "${module}")
-    set_target_properties("${target}" PROPERTIES LIRI_MODULE_VERSIONED_NAME "${_versioned_name}")
+    set_target_properties("${target}" PROPERTIES
+        DEFINE_SYMBOL "LIRI_BUILD_${name_upper}_LIB"
+        LIRI_MODULE_DESCRIPTION "${_arg_DESCRIPTION}"
+        LIRI_MODULE_NAME "${module}"
+        LIRI_MODULE_VERSIONED_NAME "${_versioned_name}"
+        LIRI_MODULE_PARENT_INCLUDE_DIR "${_parent_include_dir}"
+        LIRI_MODULE_INCLUDE_DIR "${_include_dir}"
+        LIRI_MODULE_PRIVATE_INCLUDE_DIR "${_private_include_dir}"
+    )
     if(NOT _arg_NO_MODULE_HEADERS)
         set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_HEADERS ON)
     else()
         set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_HEADERS OFF)
     endif()
-    set_target_properties("${target}" PROPERTIES
-        LIRI_MODULE_PARENT_INCLUDE_DIR "${_parent_include_dir}"
-        LIRI_MODULE_INCLUDE_DIR "${_include_dir}"
-        LIRI_MODULE_PRIVATE_INCLUDE_DIR "${_private_include_dir}"
-    )
     if(NOT _arg_NO_CMAKE)
         set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_CMAKE ON)
     else()
@@ -181,10 +190,10 @@ function(liri_add_module name)
     install(
         TARGETS "${target}" "${target_private}"
         EXPORT "${_versioned_name}Targets"
-        LIBRARY DESTINATION "${INSTALL_LIBDIR}"
-        ARCHIVE DESTINATION "${INSTALL_LIBDIR}"
-        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}"
-        PRIVATE_HEADER DESTINATION "${INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
+        LIBRARY DESTINATION "${KDE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${KDE_INSTALL_LIBDIR}"
+        PUBLIC_HEADER DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${module}"
+        PRIVATE_HEADER DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${module}/${PROJECT_VERSION}/${module}/private"
     )
 endfunction()
 
@@ -296,7 +305,7 @@ function(liri_finalize_module target)
             endif()
             file(GENERATE OUTPUT "${_private_include_dir}/${_filename}" CONTENT "#include \"${_private_header}\"\n" TARGET "${target}")
             install(FILES "${_private_header}"
-                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}/${_target_version}/${_name}/private"
+                    DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${_name}/${_target_version}/${_name}/private"
                     COMPONENT Devel)
         endforeach()
 
@@ -309,7 +318,7 @@ function(liri_finalize_module target)
             endif()
             file(GENERATE OUTPUT "${_include_dir}/${_filename}" CONTENT "#include \"${_install_header}\"\n" TARGET "${target}")
             install(FILES "${_install_header}"
-                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                    DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${_name}"
                     COMPONENT Devel)
         endforeach()
 
@@ -322,21 +331,21 @@ function(liri_finalize_module target)
                 MODULE_NAME "${_name}"
             )
             install(FILES ${${target}_CLASS_HEADERS}
-                    DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                    DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${_name}"
                     COMPONENT Devel)
         endif()
 
         # Version header
         set(_version_header "${_include_dir}/${_name_lower}version.h")
         configure_file(
-            "${_LIRI_VERSION_HEADER_TEMPLATE}"
+            "${_header_template}"
             "${_version_header}"
             @ONLY
         )
         set_property(SOURCE "${_version_header}" PROPERTY GENERATED ON)
         target_sources("${target}" PRIVATE "${_version_header}")
         install(FILES "${_version_header}"
-                DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${_name}"
                 COMPONENT Devel)
 
         # Generate global header
@@ -356,13 +365,13 @@ function(liri_finalize_module target)
         set_property(SOURCE "${_global_header}" PROPERTY GENERATED ON)
         target_sources("${target}" PRIVATE "${_global_header}")
         install(FILES "${_global_header}"
-                DESTINATION "${INSTALL_INCLUDEDIR}/${_name}"
+                DESTINATION "${KDE_INSTALL_INCLUDEDIR}/${_name}"
                 COMPONENT Devel)
     endif()
 
     # CMake package generation
     if(_has_cmake)
-        set(_config_install_dir "${INSTALL_LIBDIR}/cmake/${_versioned_name}")
+        set(_config_install_dir "${KDE_INSTALL_LIBDIR}/cmake/${_versioned_name}")
 
         install(
             EXPORT "${_versioned_name}Targets"
@@ -371,7 +380,7 @@ function(liri_finalize_module target)
         )
 
         configure_package_config_file(
-            "${_LIRI_MODULE_CONFIG_TEMPLATE}"
+            "${_module_config_template}"
             "${CMAKE_CURRENT_BINARY_DIR}/${_versioned_name}Config.cmake"
             INSTALL_DESTINATION "${_config_install_dir}"
         )
@@ -416,11 +425,11 @@ function(liri_finalize_module target)
             DEFINES ${_defines}
             DEPS ${_deps}
             FILENAME_VAR _pkgconfig_filename
-            INCLUDE_INSTALL_DIR "${INSTALL_INCLUDEDIR}"
-            LIB_INSTALL_DIR "${INSTALL_LIBDIR}"
+            INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}"
+            LIB_INSTALL_DIR "${KDE_INSTALL_LIBDIR}"
         )
         set_property(SOURCE "${_pkgconfig_filename}" PROPERTY GENERATED ON)
         install(FILES "${_pkgconfig_filename}"
-                DESTINATION "${INSTALL_LIBDIR}/pkgconfig")
+                DESTINATION "${KDE_INSTALL_LIBDIR}/pkgconfig")
     endif()
 endfunction()
