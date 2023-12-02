@@ -12,8 +12,8 @@ Shared functions and macros for projects using the CMake build system.
 
 The following modules and their dependencies are required:
 
-  * [cmake](https://gitlab.kitware.com/cmake/cmake) >= 3.17.0
-  * [extra-cmake-modules](https://invent.kde.org/frameworks/extra-cmake-modules) >= 5.99.0
+ * [cmake](https://gitlab.kitware.com/cmake/cmake) >= 3.19.0
+ * [extra-cmake-modules](https://invent.kde.org/frameworks/extra-cmake-modules) >= 5.245.0
 
 ## Installation
 

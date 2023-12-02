@@ -2,20 +2,25 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-cmake_minimum_required(VERSION 3.17.0)
+cmake_minimum_required(VERSION 3.19)
 
 project("CMakeShared"
     VERSION "2.0.99"
     DESCRIPTION "Common CMake rules"
 )
 
-set(INSTALL_DATADIR "share" CACHE PATH  "Arch-independent data [PREFIX/share]")
+## ECM:
+find_package(ECM 5.245.0 REQUIRED NO_MODULE)
+list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+
+## Installation directories:
+include(KDEInstallDirs)
 
 ## Package:
 
-set(CMAKECONFIG_INSTALL_DIR "${INSTALL_DATADIR}/LiriCMakeShared/cmake/")
-set(MODULES_INSTALL_DIR "${INSTALL_DATADIR}/LiriCMakeShared/modules/")
-set(FIND_MODULES_INSTALL_DIR "${INSTALL_DATADIR}/LiriCMakeShared/find-modules/")
+set(CMAKECONFIG_INSTALL_DIR "${KDE_INSTALL_DATADIR}/LiriCMakeShared/cmake/")
+set(MODULES_INSTALL_DIR "${KDE_INSTALL_DATADIR}/LiriCMakeShared/modules/")
+set(FIND_MODULES_INSTALL_DIR "${KDE_INSTALL_DATADIR}/LiriCMakeShared/find-modules/")
 
 include(CMakePackageConfigHelpers)
 
