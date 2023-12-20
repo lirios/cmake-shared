@@ -92,10 +92,6 @@ function(liri_extend_target target)
         endif()
 
         # Custom properties for all kinds of targets
-        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_ADAPTOR_SOURCES "${_arg_DBUS_ADAPTOR_SOURCES}")
-        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_ADAPTOR_FLAGS "${_arg_DBUS_ADAPTOR_FLAGS}")
-        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_INTERFACE_SOURCES "${_arg_DBUS_INTERFACE_SOURCES}")
-        set_property(TARGET "${target}" APPEND PROPERTY LIRI_DBUS_INTERFACE_FLAGS "${_arg_DBUS_INTERFACE_FLAGS}")
         set_property(TARGET "${target}" APPEND PROPERTY LIRI_RESOURCES "${_arg_RESOURCES}")
 
         # Custom properties only for Liri modules

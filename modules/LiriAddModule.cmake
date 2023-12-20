@@ -159,11 +159,6 @@ function(liri_add_module name)
     else()
         set_target_properties("${target}" PROPERTIES LIRI_MODULE_HAS_PKGCONFIG OFF)
     endif()
-    if(_arg_QTQUICK_COMPILER)
-        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER ON)
-    else()
-        set_target_properties("${target}" PROPERTIES LIRI_ENABLE_QTQUICK_COMPILER OFF)
-    endif()
 
     # Setup the private target
     target_include_directories("${target_private}" INTERFACE
