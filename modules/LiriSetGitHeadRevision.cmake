@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2024 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+# SPDX-License-Identifier: BSD-3-Clause
+
+function(liri_set_git_head_revision definition_name)
+    if(NOT GIT_FOUND)
+        find_package(Git QUIET)
+    endif()
+
+    set(_git_rev "")
+
+    if(GIT_FOUND)
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE _git_rev
+        )
+        string(STRIP "${_git_rev}" _git_rev)
+    endif()
+
+    if("x${_git_rev}" STREQUAL "x")
+        set(_git_rev "tarball")
+    endif()
+
+    set(${definition_name} "${_git_rev}" PARENT_SCOPE)
+endfunction()
